@@ -103,10 +103,6 @@ class _Estado(ABC):
     def validar_descarte(self, descarte: Descarte | None) -> None:
         """Coherencia estado/descarte al reconstruir un aviso."""
 
-    def _rechazar(self, operacion: str) -> None:
-        raise AvisoNoPendiente(f"Un aviso {self.etiqueta.value} no puede {operacion}")
-
-
 class _Pendiente(_Estado):
     etiqueta = EstadoAviso.PENDIENTE
 
