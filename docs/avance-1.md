@@ -130,5 +130,3 @@ stateDiagram-v2
     Descartado --> [*]
     Aceptado --> [*]
 ```
-
-| Operación       |
