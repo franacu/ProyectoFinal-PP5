@@ -1,0 +1,120 @@
+"""Guion de la presentación. Cada paso se avanza con UN clic.
+
+Tipos de paso:
+  enunciado : texto del enunciado; cada [[frase]] se marca en rojo con un clic.
+  extraer   : lo marcado pasa a "tarjetas" (frase -> pieza del modelo), una por clic.
+  resumen   : síntesis del enunciado, un punto por clic.
+  codigo    : código real del repo; cada nota ilumina una línea y la define en una frase.
+Las notas de código son (texto_a_buscar_en_la_línea, término, qué es, por qué acá).
+El texto a buscar se ubica en orden, de arriba hacia abajo.
+"""
+
+PASOS = [
+    dict(tipo="enunciado", titulo="1 · Leemos el enunciado y marcamos lo importante", fuente="§1 Descripción del negocio",
+         texto=["El CRCE es un organismo encargado de organizar la respuesta ante situaciones que ponen en riesgo a personas, bienes e infraestructura. "
+                "Recibe [[avisos]] sobre inundaciones, incendios y accidentes viales, a partir de los cuales sus [[operadores]] evalúan las situaciones, "
+                "registran las [[emergencias]] que requieren intervención y organizan las [[misiones]] necesarias para atenderlas.",
+                "El CRCE dispone de [[bases operativas]] donde se encuentran [[unidades de respuesta]] integradas por [[personal]] especializado, "
+                "[[vehículos]] y [[equipamiento]]. No todas las unidades cuentan con las mismas capacidades."]),
+    dict(tipo="enunciado", titulo="2 · Reglas del aviso", fuente="§7.1 Avisos",
+         texto=["Los avisos comienzan [[pendientes de evaluación]]. Un operador puede [[aceptar]] un aviso y originar una emergencia, o [[descartarlo registrando una justificación]]. "
+                "Un aviso aceptado origina [[una única emergencia]] y [[no puede evaluarse nuevamente]]; uno descartado tampoco puede ser aceptado posteriormente."]),
+    dict(tipo="enunciado", titulo="3 · Reglas de la misión", fuente="§8.1 Estados de misión",
+         texto=["Cada misión atraviesa los estados: [[Pendiente]], [[Asignada]], [[En ejecución]], [[Finalizada]] y [[Cancelada]].",
+                "[[No se admiten transiciones arbitrarias]] entre estados, y una misión finalizada o cancelada [[no puede reabrirse]]."]),
+    dict(tipo="enunciado", titulo="4 · Reglas de la asignación", fuente="§8.2 Asignaciones",
+         texto=["El operador selecciona una unidad completa. El sistema verifica que [[exista una distribución de personas distintas]] que cubra los requisitos de la misión.",
+                "Antes de confirmar verifica: emergencia abierta, misión pendiente (o asignada si se reasigna), unidad disponible y habilitada, "
+                "[[sin otra misión]], [[vehículo compatible y operativo]], [[personal y competencias]] y [[equipamiento necesario]].",
+                "Si alguna condición no se satisface, [[la asignación se rechaza indicando el motivo]]."]),
+    dict(tipo="extraer", titulo="5 · Lo marcado se guarda como piezas del modelo",
+         items=[("avisos", "Aviso", "entidad con estados"), ("emergencias", "Emergencia", "raíz de agregado"),
+                ("misiones", "Mision", "clase abstracta + 3 subtipos"), ("unidades de respuesta", "Unidad", "agrupa personal, vehículo y equipo"),
+                ("vehículos", "Vehiculo", "jerarquía por categoría"), ("pendientes … no puede evaluarse nuevamente", "State pattern", "Aviso delega en su estado"),
+                ("distribución de personas distintas", "existe_distribucion", "backtracking en distribucion.py"),
+                ("se rechaza indicando el motivo", "Excepciones de dominio", "falla antes de modificar nada")]),
+    dict(tipo="resumen", titulo="6 · Resumen del enunciado",
+         puntos=["Llegan **avisos**; un operador los **acepta** (nace una emergencia) o los **descarta** con justificación.",
+                 "Una **emergencia** abierta contiene **misiones** compatibles con su tipo; solo se cierra si todas terminaron y alguna fue exitosa.",
+                 "Cada **misión** pasa por 5 estados sin saltos ni reaperturas; se le asigna una **unidad completa** (jefe, personal, vehículo, equipo).",
+                 "Antes de asignar se verifican 7 condiciones; si falla una, **no se modifica nada** y se informa el motivo.",
+                 "Restricción de oficio: sin `isinstance`, el comportamiento por estado/tipo **lo decide cada clase** (polimorfismo)."]),
+
+    # ───────── construcción, de a una pieza ─────────
+    dict(tipo="codigo", titulo="7 · Primero lo más chico: el catálogo", clase="Catalogo", archivo="dominio/catalogos.py", simbolo="Catalogo",
+         por_que="Los tipos de situación, gravedad, etc. son listas cerradas: un Enum evita textos sueltos.",
+         notas=[("class Catalogo(Enum)", "Enum", "Lista cerrada de valores con nombre.", "Una situación solo puede ser inundación, incendio o accidente vial."),
+                ("@classmethod", "classmethod", "Método que recibe la clase (cls) y no una instancia.", "Se llama Catalogo.contiene(x) sin crear objetos."),
+                ("return valor in tuple(cls)", "tuple(cls)", "Recorre los miembros reales del Enum.", "Con `in cls` el texto \"inundacion\" también pasaría (Python 3.12+).")]),
+    dict(tipo="codigo", titulo="8 · Un valor inmutable: la ubicación", clase="Ubicacion", archivo="dominio/valores.py", simbolo="Ubicacion",
+         por_que="Una dirección no tiene identidad propia: dos con los mismos datos son la misma. Se crea válida y no cambia.",
+         notas=[("@dataclass(frozen=True, slots=True)", "dataclass frozen", "Genera constructor e igualdad; frozen impide modificar atributos.", "Es un objeto de valor: inmutable."),
+                ("slots=True", "slots", "Reserva atributos fijos, sin diccionario dinámico.", "Evita agregar campos por error."),
+                ("def __post_init__", "__post_init__", "Se ejecuta justo después de construir el objeto.", "Valida antes de que exista: nunca hay una Ubicacion inválida."),
+                ("raise DatoDeAvisoInvalido", "excepción de dominio", "Error propio con nombre del negocio.", "La capa HTTP lo traduce a 422 sin mirar el texto.")]),
+    dict(tipo="codigo", titulo="9 · El Aviso delega en su estado", clase="_Estado", archivo="dominio/aviso.py", simbolo="_Estado",
+         por_que="§7.1: un aviso pendiente puede evaluarse, uno aceptado o descartado no. Esa decisión la toma el estado, no un if.",
+         notas=[("class _Estado(ABC)", "ABC", "Clase base abstracta: no se instancia sola.", "Define el contrato que cumple cada estado."),
+                ("etiqueta: EstadoAviso", "atributo de clase", "Dato común a todas las instancias del estado.", "Permite saber qué estado es sin comparar clases."),
+                ("@abstractmethod", "abstractmethod", "Obliga a las subclases a implementarlo.", "Si un estado olvida una operación, Python no lo deja crear."),
+                ("def descartar(self) -> _Estado", "devuelve el estado siguiente", "La operación responde con el próximo estado.", "El Aviso solo lo guarda: no conoce la tabla de transiciones.")]),
+    dict(tipo="codigo", titulo="10 · Un estado concreto: Pendiente", clase="_Pendiente", archivo="dominio/aviso.py", simbolo="_Pendiente",
+         por_que="El único estado donde se puede evaluar. Los otros dos lanzan AvisoNoPendiente.",
+         notas=[("class _Pendiente(_Estado)", "herencia", "Subclase que cumple el contrato.", "Polimorfismo: el Aviso trata a todos igual."),
+                ("def permitir_nota(self) -> None:", "permitir_*", "Valida sin devolver nada.", "Pendiente acepta notas: `pass` significa permitido."),
+                ("return _DESCARTADO", "estado singleton", "Instancia única reutilizada.", "Los estados no guardan datos, no hace falta crear uno por aviso."),
+                ("raise DatoDeAvisoInvalido", "coherencia al reconstruir", "Revisa estado vs. descarte.", "Un pendiente con descarte es un dato corrupto.")]),
+    dict(tipo="codigo", titulo="11 · Aceptar: falla antes de modificar", clase="Aviso", archivo="dominio/aviso.py", simbolo="Aviso.aceptar",
+         por_que="Aceptar crea la Emergencia y cambia el aviso. Si algo falla, el aviso debe quedar intacto.",
+         notas=[("self._estado.aceptar()", "delegación", "El Aviso le pregunta al estado.", "Sin `if estado == ...`: lo resuelve el polimorfismo."),
+                ("emergencia = Emergencia(", "validar primero", "Se construye todo lo que puede fallar.", "El constructor valida tipo, gravedad y operador."),
+                ("registro = Registro.de(", "historial", "Registro inmutable de quién hizo qué y cuándo.", "Cumple el requisito de trazabilidad."),
+                ("self._estado = siguiente", "modificar al final", "Recién acá cambia el estado real.", "Fail-before-modify: nada se toca hasta tener todo validado."),
+                ("return emergencia", "una sola emergencia", "Devuelve el objeto creado.", "Un aviso aceptado no vuelve a evaluarse: el estado ya cambió.")]),
+    dict(tipo="codigo", titulo="12 · Reconstruir un aviso existente", clase="Aviso", archivo="dominio/aviso.py", simbolo="Aviso.restaurar",
+         por_que="El repositorio Mongo tendrá que rearmar avisos guardados sin pasar por las operaciones de negocio.",
+         notas=[("@classmethod", "classmethod", "Método que construye la clase.", "Es un constructor alternativo con nombre claro."),
+                ("*,", "solo por nombre", "Obliga a pasar los argumentos con su nombre.", "Con 12 parámetros evita mezclar el orden."),
+                ("nuevo_estado.validar_descarte(descarte)", "validar coherencia", "El estado revisa su propio dato.", "Cada estado sabe si admite descarte."),
+                ("aviso._estado = nuevo_estado", "acceso interno", "La clase se arma a sí misma.", "Nadie de afuera puede escribir `_estado`.")]),
+    dict(tipo="codigo", titulo="13 · Emergencia: dos estados, abierta y cerrada", clase="_Abierta", archivo="dominio/emergencia.py", simbolo="_Abierta",
+         por_que="§7.2: abierta admite misiones; cerrada no admite nada. La regla de cierre vive en el estado abierto.",
+         notas=[("class _Abierta(_Estado)", "State pattern", "Un objeto por estado, con su comportamiento.", "Evita if/else dispersos sobre un campo `estado`."),
+                ("mision.verificar_concluida()", "pregunta polimórfica", "Cada misión responde si ya terminó.", "Sin isinstance: la misión decide."),
+                ("any(m.es_exitosa()", "any()", "True si al menos una cumple.", "Regla: al menos una misión finalizada con éxito."),
+                ("raise SinMisionExitosa", "excepción de dominio", "Motivo explícito.", "También cubre la emergencia sin misiones.")]),
+    dict(tipo="codigo", titulo="14 · Misión: estados que rechazan por defecto", clase="_Estado", archivo="dominio/mision.py", simbolo="_Estado",
+         por_que="Hay 7 operaciones y 5 estados. En vez de repetir rechazos, la base rechaza todo y cada estado habilita lo suyo.",
+         notas=[("class _Estado(ABC)", "ABC", "Contrato común de los 5 estados.", "La Mision no conoce estados concretos."),
+                ("def _no_admite", "método auxiliar _", "El guion bajo marca uso interno.", "Arma el error una sola vez."),
+                ("def asignar(self)", "comportamiento por defecto", "Lanza MisionEnEstadoInvalido.", "Lo que no se sobrescribe se rechaza: no hay transiciones arbitrarias."),
+                ("def verificar_concluida", "pregunta al estado", "Lanza si la misión sigue viva.", "Lo usa la emergencia para decidir el cierre."),
+                ("def exito(", "valor por defecto", "False salvo que el estado lo cambie.", "Solo Finalizada con resultado satisfactorio dice True.")]),
+    dict(tipo="codigo", titulo="15 · Evacuación: un tipo de misión", clase="Evacuacion", archivo="dominio/mision.py", simbolo="Evacuacion",
+         por_que="§6.1: cada tipo de misión pide requisitos distintos. Cada subclase los define; no hay switch por tipo.",
+         notas=[("class Evacuacion(Mision)", "herencia", "Subclase de la misión abstracta.", "Comparte estados y lógica de asignación."),
+                ("tipo = TipoMision.EVACUACION", "atributo de clase", "Dato fijo del tipo.", "Se lee sin instanciar."),
+                ("situaciones_admitidas = frozenset", "frozenset", "Conjunto inmutable.", "Se compara con el tipo de la emergencia: nadie lo modifica."),
+                ("puestos = (", "tupla", "Secuencia inmutable de puestos.", "Cada puesto exige una competencia distinta."),
+                ("es_entero_positivo(", "validar entrada", "Rechaza 0, negativos y booleanos.", "Se valida en el constructor, antes de crear."),
+                ("vehiculo.verificar_evacuacion(", "double dispatch", "La misión llama al vehículo con su propio dato.", "El vehículo decide si sirve: sin `if tipo`."),
+                ("pass  #", "no-op explícito", "Sin requisitos de equipo.", "§5.5: la evacuación no los necesita.")]),
+    dict(tipo="codigo", titulo="16 · Vehículo: por defecto no sirve para nada", clase="Vehiculo", archivo="dominio/vehiculos.py", simbolo="Vehiculo",
+         por_que="Cada categoría de vehículo habilita solo lo suyo; el resto se rechaza desde la clase base.",
+         notas=[("@dataclass(frozen=True, kw_only=True)", "kw_only", "Todos los campos se pasan por nombre.", "Mezclar id y condición no pasa desapercibido."),
+                ("class Vehiculo(ABC)", "ABC", "No existe un vehículo genérico.", "Siempre es de una categoría concreta."),
+                ("@property", "property", "Se lee como atributo, sin paréntesis.", "Expone datos sin permitir escribirlos."),
+                ("@abstractmethod", "abstractmethod", "Cada subclase define su categoría.", "No puede haber vehículo sin categoría."),
+                ("replace(self, condicion=condicion)", "replace", "Copia con un campo cambiado.", "Como es frozen, 'cambiar' crea uno nuevo."),
+                ("def verificar_evacuacion", "rechazo por defecto", "Lanza VehiculoIncompatible.", "Un camión de rescate no evacúa: lo dice su clase base.")]),
+    dict(tipo="codigo", titulo="17 · Transporte de personas habilita evacuar", clase="TransportePersonas", archivo="dominio/vehiculos.py", simbolo="TransportePersonas",
+         por_que="Sobrescribe solo lo que sí sabe hacer y agrega su regla: la capacidad.",
+         notas=[("class TransportePersonas(Vehiculo)", "herencia", "Hereda id, condición y rechazos.", "Reutiliza sin copiar código."),
+                ("capacidad_evacuados: int", "campo propio", "Dato exclusivo de esta categoría.", "Solo los de transporte tienen capacidad."),
+                ("super().__post_init__()", "super()", "Ejecuta la validación de la clase padre.", "Valida id y condición antes que lo propio."),
+                ("return CategoriaVehiculo.TRANSPORTE_DE_PERSONAS", "implementa lo abstracto", "Cumple el contrato.", "Ahora sí se puede instanciar."),
+                ("if cantidad > self.capacidad_evacuados", "regla del negocio", "Compara personas con plazas.", "§5.4: la dotación no cuenta como evacuado.")]),
+]
+
+# Orden en que aparecen las clases en el mapa inferior ("el modelo se va armando")
+MAPA = ["Catalogo", "Ubicacion", "_Estado", "_Pendiente", "Aviso", "Emergencia", "_Estado", "Mision", "Vehiculo"]
