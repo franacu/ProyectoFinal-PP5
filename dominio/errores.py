@@ -10,10 +10,18 @@ class DatoDeAvisoInvalido(ErrorDeDominio):
 
 
 class NotaInvalida(ErrorDeDominio):
-    """La nota no tiene autor o texto (R2)."""
+    """La nota no tiene autor, texto o fecha (R2)."""
 
 
-class JustificacionVacia(ErrorDeDominio):
+class NotaDeOtroAutor(ErrorDeDominio):
+    """Solo el reportante del aviso puede agregarle notas (§2.1)."""
+
+
+class DescarteInvalido(ErrorDeDominio):
+    """El descarte no tiene operador, justificación o fecha (R4)."""
+
+
+class JustificacionVacia(DescarteInvalido):
     """Descartar exige una justificación con contenido (R4)."""
 
 
