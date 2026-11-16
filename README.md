@@ -2,22 +2,50 @@
 
 TP Integrador 2026 · Paradigmas de Programación V · FIE-UNDEF
 
-## Avance 1 — Avisos y notas
-
-Diseño (diagramas de clases y estados, tarjetas CRC): [`docs/avance-1.md`](docs/avance-1.md)
+Dominio en Python puro (solo biblioteca estándar), orientado a objetos.
 
 ```bash
 uv sync
 uv run pytest
 ```
 
+## Estructura
+
 ```
 dominio/
-  catalogos.py   # TipoSituacion, Gravedad (catálogos cerrados)
-  errores.py     # excepciones de dominio
-  aviso.py       # Aviso (entidad) + Ubicacion, Nota, Descarte (valores)
+  catalogos.py     # catálogos cerrados: situaciones, gravedad, competencias, categorías, condiciones
+  errores.py       # excepciones de dominio (un motivo = una clase)
+  valores.py       # Ubicacion y validaciones compartidas
+  historial.py     # Registro inmutable + catálogo de operaciones (§9)
+  aviso.py         # Aviso (entidad, State) + Nota, Descarte; aceptar() origina la Emergencia
+  emergencia.py    # Emergencia (raíz de sus misiones, State abierta/cerrada), prioridad, cierre
+  mision.py        # Mision abstracta (State de 5 estados) + Evacuacion, Rescate, AsistenciaSanitaria
+  unidad.py        # Unidad: condición de servicio (State) y compromiso con una misión
+  flota.py         # Flota: bases y unidades; garantiza que ningún recurso esté en dos unidades
+  personal.py      # Persona y competencias
+  vehiculos.py     # Vehiculo polimórfico: TransportePersonas, VehiculoRescate, Ambulancia
+  equipamiento.py  # Equipo y su condición
+  distribucion.py  # ¿existe un reparto de personas distintas que cubra los puestos?
 tests/
-  test_avisos.py # R1..R6
+  test_avisos.py, test_avisos_robustez.py   # Avance 1 (R1–R6)
+  test_evaluacion_avisos.py                 # PV01–PV02: aceptar / descartar
+  test_recursos.py                          # PV07, PV14 y unicidad de recursos
+  test_asignacion.py                        # PV06–PV10
+  test_ejecucion.py                         # PV11–PV13, PV15, PV18
+  test_emergencias.py                       # PV03–PV05, PV16–PV18
+  test_diseno.py                            # el dominio no pregunta por clase, solo stdlib, sin hora del sistema
+  escenarios.py                             # armado de datos de ejemplo
 docs/
   avance-1.md
 ```
+
+## Decisiones de diseño (resumen)
+
+- **State** en Aviso, Mision (5 estados), Emergencia y condición de servicio de Unidad: cada estado
+  decide qué admite; el objeto que lo contiene delega y nunca pregunta "¿en qué estado estás?".
+- **Polimorfismo por tipo de misión y de vehículo** (doble despacho): la unidad le pregunta a la
+  misión y el vehículo contesta; no hay `isinstance` en el dominio (lo vigila `test_diseno.py`).
+- **Null Object** para la unidad asignada de una misión: liberar una misión pendiente es no hacer nada.
+- **Falla antes de modificar**: toda operación valida todo primero; un rechazo no deja cambios ni registros.
+- **Historial inmutable**: cada agregado expone sus `Registro` como tupla de objetos congelados.
+- **Fechas como parámetro**: el dominio nunca llama a `datetime.now()`.

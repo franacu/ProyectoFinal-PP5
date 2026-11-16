@@ -19,6 +19,7 @@ from datetime import datetime
 from enum import Enum
 
 from dominio.catalogos import Gravedad, TipoSituacion
+from dominio.emergencia import Emergencia
 from dominio.errores import (
     AvisoNoPendiente,
     DatoDeAvisoInvalido,
@@ -27,24 +28,11 @@ from dominio.errores import (
     NotaDeOtroAutor,
     NotaInvalida,
 )
-
-
-def _hay_texto(valor) -> bool:
-    """Verdadero si hay texto con contenido (rechaza None, "" y solo espacios)."""
-    return bool(valor) and not valor.isspace()
+from dominio.historial import Operacion, Registro
+from dominio.valores import Ubicacion, hay_texto  # Ubicacion se sigue exportando desde acá
 
 
 # ── Valores ───────────────────────────────────────────────────
-
-@dataclass(frozen=True, slots=True)
-class Ubicacion:
-    direccion: str
-    localidad: str
-
-    def __post_init__(self) -> None:
-        if not _hay_texto(self.direccion) or not _hay_texto(self.localidad):
-            raise DatoDeAvisoInvalido("La ubicación necesita dirección y localidad")
-
 
 @dataclass(frozen=True, slots=True)
 class Nota:
@@ -53,9 +41,9 @@ class Nota:
     fecha_hora: datetime
 
     def __post_init__(self) -> None:
-        if not _hay_texto(self.autor_id):
+        if not hay_texto(self.autor_id):
             raise NotaInvalida("La nota necesita un autor")
-        if not _hay_texto(self.texto):
+        if not hay_texto(self.texto):
             raise NotaInvalida("La nota no puede estar vacía")
         if self.fecha_hora is None:
             raise NotaInvalida("La nota necesita fecha y hora")
@@ -68,9 +56,9 @@ class Descarte:
     fecha_hora: datetime
 
     def __post_init__(self) -> None:
-        if not _hay_texto(self.justificacion):
+        if not hay_texto(self.justificacion):
             raise JustificacionVacia("Descartar exige una justificación")
-        if not _hay_texto(self.operador_id):
+        if not hay_texto(self.operador_id):
             raise DescarteInvalido("El descarte necesita un operador")
         if self.fecha_hora is None:
             raise DescarteInvalido("El descarte necesita fecha y hora")
@@ -100,8 +88,13 @@ class _Estado(ABC):
         """Devuelve el estado siguiente, o lanza AvisoNoPendiente."""
 
     @abstractmethod
+    def aceptar(self) -> _Estado:
+        """Devuelve el estado siguiente, o lanza AvisoNoPendiente."""
+
+    @abstractmethod
     def validar_descarte(self, descarte: Descarte | None) -> None:
         """Coherencia estado/descarte al reconstruir un aviso."""
+
 
 class _Pendiente(_Estado):
     etiqueta = EstadoAviso.PENDIENTE
@@ -111,6 +104,9 @@ class _Pendiente(_Estado):
 
     def descartar(self) -> _Estado:
         return _DESCARTADO
+
+    def aceptar(self) -> _Estado:
+        return _ACEPTADO
 
     def validar_descarte(self, descarte: Descarte | None) -> None:
         if descarte is not None:
@@ -126,6 +122,9 @@ class _Aceptado(_Estado):
     def descartar(self) -> _Estado:
         raise AvisoNoPendiente("Un aviso aceptado no puede evaluarse")
 
+    def aceptar(self) -> _Estado:
+        raise AvisoNoPendiente("Un aviso aceptado ya originó su emergencia")
+
     def validar_descarte(self, descarte: Descarte | None) -> None:
         if descarte is not None:
             raise DatoDeAvisoInvalido("Un aviso aceptado no tiene descarte")
@@ -139,6 +138,9 @@ class _Descartado(_Estado):
 
     def descartar(self) -> _Estado:
         raise AvisoNoPendiente("Un aviso descartado no puede evaluarse")
+
+    def aceptar(self) -> _Estado:
+        raise AvisoNoPendiente("Un aviso descartado no puede aceptarse")
 
     def validar_descarte(self, descarte: Descarte | None) -> None:
         if descarte is None:
@@ -173,6 +175,10 @@ class Aviso:
         self._estado: _Estado = _PENDIENTE  # R1: todo aviso nace pendiente
         self._notas: list[Nota] = []
         self._descarte: Descarte | None = None
+        self._registros: list[Registro] = [
+            Registro.de(reportante_id, registrado_en, Operacion.AVISO_REGISTRADO, self._id,
+                        tipo=tipo.value, gravedad=gravedad_estimada.name.lower())
+        ]
 
     @classmethod
     def restaurar(
@@ -188,6 +194,7 @@ class Aviso:
         estado: EstadoAviso,
         notas: tuple[Nota, ...] = (),
         descarte: Descarte | None = None,
+        registros: tuple[Registro, ...] = (),
     ) -> Aviso:
         """Reconstruye un aviso ya existente (lo usará el repositorio Mongo).
 
@@ -202,6 +209,8 @@ class Aviso:
         aviso._estado = nuevo_estado
         aviso._notas = list(notas)
         aviso._descarte = descarte
+        if registros:
+            aviso._registros = list(registros)
         return aviso
 
     # ── Comportamiento ─────────────────────────────────────────
@@ -212,16 +221,36 @@ class Aviso:
         if autor_id != self._reportante_id:
             raise NotaDeOtroAutor("Solo el reportante del aviso puede agregarle notas")
         nota = Nota(autor_id, texto, fecha_hora)  # valida antes de tocar la lista
+        registro = Registro.de(autor_id, fecha_hora, Operacion.NOTA_AGREGADA, self._id)
         self._notas.append(nota)
+        self._registros.append(registro)
         return nota
 
     def descartar(self, operador_id: str, justificacion: str, fecha_hora: datetime) -> None:
         """R4, R5, R6."""
         siguiente = self._estado.descartar()  # lanza si ya no está pendiente
         descarte = Descarte(operador_id, justificacion, fecha_hora)
+        registro = Registro.de(operador_id, fecha_hora, Operacion.AVISO_DESCARTADO, self._id,
+                               justificacion=descarte.justificacion)
         # recién acá cambia el objeto: todo lo que podía fallar ya pasó
         self._descarte = descarte
         self._estado = siguiente
+        self._registros.append(registro)
+
+    def aceptar(self, operador_id: str, tipo: TipoSituacion, gravedad: Gravedad,
+                fecha_hora: datetime) -> Emergencia:
+        """§2.2, §7.1: acepta el aviso, confirma o corrige tipo y gravedad y origina UNA emergencia.
+
+        Los datos originales del aviso no se pisan: la emergencia guarda los confirmados.
+        """
+        siguiente = self._estado.aceptar()  # lanza si ya no está pendiente
+        emergencia = Emergencia(self._id, self._reportante_id, self._ubicacion, tipo, gravedad,
+                                fecha_hora, operador_id)  # valida todo antes de que cambie el aviso
+        registro = Registro.de(operador_id, fecha_hora, Operacion.AVISO_ACEPTADO, self._id, emergencia.id,
+                               tipo=tipo.value, gravedad=gravedad.name.lower())
+        self._estado = siguiente
+        self._registros.append(registro)
+        return emergencia
 
     # ── Lectura (sin setters: nadie cambia el aviso desde afuera) ─
 
@@ -267,9 +296,14 @@ class Aviso:
     def descarte(self) -> Descarte | None:
         return self._descarte
 
+    @property
+    def registros(self) -> tuple[Registro, ...]:
+        """Historial inmutable del aviso (§9)."""
+        return tuple(self._registros)
+
 
 def _validar_datos(reportante_id, ubicacion, tipo, gravedad, descripcion, registrado_en) -> None:
-    if not _hay_texto(reportante_id):
+    if not hay_texto(reportante_id):
         raise DatoDeAvisoInvalido("El aviso necesita un reportante")
     if ubicacion is None:
         raise DatoDeAvisoInvalido("El aviso necesita una ubicación")
@@ -277,7 +311,7 @@ def _validar_datos(reportante_id, ubicacion, tipo, gravedad, descripcion, regist
         raise DatoDeAvisoInvalido(f"Tipo de situación fuera de catálogo: {tipo!r}")
     if not Gravedad.contiene(gravedad):
         raise DatoDeAvisoInvalido(f"Gravedad fuera de catálogo: {gravedad!r}")
-    if not _hay_texto(descripcion):
+    if not hay_texto(descripcion):
         raise DatoDeAvisoInvalido("El aviso necesita una descripción")
     if registrado_en is None:
         raise DatoDeAvisoInvalido("El aviso necesita fecha y hora de registro")
