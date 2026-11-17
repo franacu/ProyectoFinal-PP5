@@ -4,10 +4,77 @@ TP Integrador 2026 · Paradigmas de Programación V · FIE-UNDEF
 
 Dominio en Python puro (solo biblioteca estándar), orientado a objetos.
 
+## Ver el proyecto en tu computadora (paso a paso)
+
+Todavía no hay servidor web: lo que se ve es la **presentación y los diagramas interactivos**, que son
+páginas HTML estáticas generadas a partir del código real. No hace falta instalar nada más que Python.
+
+**1. Requisitos**
+
+- Git
+- Python 3.13 o superior (`python3 --version` para comprobarlo)
+- [uv](https://docs.astral.sh/uv/) (opcional pero recomendado): `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  en macOS/Linux, o `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"` en Windows
+
+**2. Clonar el repositorio**
+
+```bash
+git clone https://github.com/franacu/ProyectoFinal-PP5.git
+cd ProyectoFinal-PP5
+```
+
+**3. Instalar y comprobar que el dominio funciona** (debe terminar con `204 passed`)
+
 ```bash
 uv sync
 uv run pytest
 ```
+
+Sin uv: `python3 -m venv .venv && source .venv/bin/activate && pip install pytest && pytest`
+(en Windows, `.venv\Scripts\activate`).
+
+**4. Generar la pantalla de presentación y diagramas**
+
+```bash
+uv run python docs/crce.py
+```
+
+(o `python3 docs/crce.py`; solo usa la biblioteca estándar). Crea `docs/crce.html`, `docs/diagrama.html`
+y `docs/presentar.html`.
+
+**5. Abrirla en el navegador**
+
+```bash
+open docs/crce.html          # macOS
+xdg-open docs/crce.html      # Linux
+start docs\crce.html         # Windows
+```
+
+Se abre una página con una barra lateral:
+
+| Tecla / botón | Qué hace |
+|---|---|
+| **Presentación** (`P`) | Avanza de a un clic con `Espacio` o `→`; `←` vuelve; `F` pantalla completa |
+| **Diagramas** (`D`) | Modelo de clases, estados de la misión y vista en lista; cada caja se vincula al código |
+| `M` | Achica o agranda el menú |
+
+Desde la presentación, tocar una clase del pie (o apretar `D`) abre el diagrama enfocado en esa clase.
+
+**6. Opcional: enlaces al enunciado y a VS Code**
+
+- Para que los botones "§ sección" abran el enunciado, copiá el PDF como `docs/enunciado.pdf`
+  (está en `.gitignore`: no se sube) y volvé a ejecutar el paso 4.
+- "Ver en VS Code" abre el archivo en la línea exacta, siempre que VS Code esté instalado y el
+  repositorio esté clonado en esta misma ubicación.
+
+**Si algo falla**
+
+| Síntoma | Solución |
+|---|---|
+| `command not found: python` | Usá `python3` |
+| `uv: command not found` | Reabrí la terminal tras instalar uv, o usá la variante sin uv |
+| La presentación abre pero la barra lateral no cambia | Abrí `docs/crce.html`, no los otros dos archivos sueltos |
+| Los enlaces al enunciado no abren | Falta `docs/enunciado.pdf` (paso 6) |
 
 ## Estructura
 
@@ -37,6 +104,9 @@ tests/
   escenarios.py                             # armado de datos de ejemplo
 docs/
   avance-1.md
+  crce.py            # genera crce.html: barra lateral con presentación y diagramas
+  presentar.py       # presentación de un clic (guion.py tiene el guion)
+  diagrama_interactivo.py  # diagramas vinculados al código
 ```
 
 ## Decisiones de diseño (resumen)
