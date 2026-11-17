@@ -172,4 +172,46 @@ class Lancha(Vehiculo):
 Lancha(id="L1").verificar_evacuacion(5)"""),
     ("conclusion", "Cómo se lo explico al profesor", "Prefiero que lo no declarado esté prohibido: si agrego una categoría y me olvido de algo, el sistema rechaza (seguro) en lugar de aceptar por error. Cada categoría habilita explícitamente solo lo suyo."),
 ]),
+"prioridad": dict(titulo="Prioridad en acción: tres emergencias", bloques=[
+    ("historia", "Situación", "Hay tres emergencias abiertas: A es media (aceptada 08:00), B es alta (11:00) y C es alta (09:00). ¿En qué orden se atienden?"),
+    ("con", "Con el proyecto: se ordenan con la clave de prioridad", """from datetime import datetime
+from dominio.catalogos import Gravedad, TipoSituacion
+from dominio.emergencia import Emergencia, abiertas_por_prioridad
+from dominio.valores import Ubicacion
+u = Ubicacion("Mitre 100", "Rosario")
+def emergencia(nombre, gravedad, hora):
+    return Emergencia(nombre, "rep1", u, TipoSituacion.INCENDIO, gravedad, datetime(2026, 11, 20, hora, 0), "op1")
+lista = [emergencia("A (media, 08:00)", Gravedad.MEDIA, 8),
+         emergencia("B (alta, 11:00)", Gravedad.ALTA, 11),
+         emergencia("C (alta, 09:00)", Gravedad.ALTA, 9)]
+for e in abiertas_por_prioridad(lista):
+    print(e.aviso_id, "  clave:", -e.gravedad.value, e.creada_en.strftime("%H:%M"))"""),
+    ("conclusion", "Cómo se lo explico al profesor", "Primero las altas y, entre las altas, la más antigua: C, después B, al final A aunque haya llegado primero. La clave es una tupla (menos la gravedad, fecha): el signo menos hace que ALTA quede adelante al ordenar de menor a mayor, y la fecha desempata."),
+]),
+"distribucion": dict(titulo="¿Por qué probar y volver atrás? Ana, Bruno y Carla", bloques=[
+    ("historia", "Situación", "Un rescate pide tres puestos: conducción, rescate y rescate. La unidad tiene a Ana (conduce y rescata), Bruno (solo conduce) y Carla (solo rescata). ¿Alcanza?"),
+    ("sin", "Sin volver atrás: se elige siempre la primera persona que sirve", """def alcanza_rapido(puestos, personas):
+    libres = list(personas)
+    for puesto in puestos:
+        elegida = next((p for p in libres if puesto in p[1]), None)
+        if elegida is None:
+            return False
+        libres.remove(elegida)
+    return True
+
+ana = ("Ana", {"conduccion", "rescate"})
+bruno = ("Bruno", {"conduccion"})
+carla = ("Carla", {"rescate"})
+print(alcanza_rapido(["conduccion", "rescate", "rescate"], [ana, bruno, carla]))"""),
+    ("problema", "Qué sale mal", "Dice que no alcanza, pero sí alcanza: Ana fue a conducir (era la primera que servía), Carla tomó un rescate y para el otro rescate no quedó nadie. Si Bruno conducía, Ana y Carla rescataban."),
+    ("con", "Con el proyecto: prueba, y si no sirve vuelve atrás", """from dominio.catalogos import Competencia as C
+from dominio.distribucion import existe_distribucion
+from dominio.personal import Persona
+ana = Persona("p1", "Ana", {C.CONDUCCION, C.RESCATE})
+bruno = Persona("p2", "Bruno", {C.CONDUCCION})
+carla = Persona("p3", "Carla", {C.RESCATE})
+print(existe_distribucion((C.CONDUCCION, C.RESCATE, C.RESCATE), (ana, bruno, carla)))
+print(existe_distribucion((C.CONDUCCION, C.RESCATE, C.RESCATE), (ana, carla)))"""),
+    ("conclusion", "Cómo se lo explico al profesor", "Elegir siempre la primera persona que sirve puede fallar aunque exista un reparto. Por eso la función prueba: pone a alguien en el primer puesto y resuelve el resto; si no sale, vuelve atrás y prueba con otra persona. Con Ana y Carla solas da False, porque Ana no puede conducir y rescatar a la vez."),
+]),
 }

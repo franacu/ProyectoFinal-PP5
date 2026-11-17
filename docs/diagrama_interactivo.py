@@ -112,7 +112,7 @@ def _buscar(arbol, partes):
 def _entrada(archivo, ini, fin, simbolo, titulo, doc=""):
     lineas = (RAIZ / archivo).read_text(encoding="utf-8").splitlines()
     return {"archivo": archivo, "simbolo": simbolo, "titulo": titulo, "linea": ini, "fin": fin, "doc": doc,
-            "codigo": textwrap.dedent("\n".join(lineas[ini - 1:fin])), "abs": str(RAIZ / archivo)}
+            "codigo": textwrap.dedent("\n".join(lineas[ini - 1:fin]))}
 
 
 def codigo(archivo, simbolo, titulo=None):
@@ -244,7 +244,10 @@ def _mult(p, q, texto, n=""):
 
 
 def vscode(d):
-    return f"vscode://file/{d['abs']}:{d['linea']}"
+    """Atributos del enlace al código. El href real lo arma el script de la página según dónde esté abierta
+    (VS Code en tu carpeta si es un archivo local, GitHub si se sirve desde la web)."""
+    return f'href="#" data-a="{d["archivo"]}" data-l="{d["linea"]}"'
+
 
 
 def svg_clases(cajas, colder, datos):
@@ -313,7 +316,7 @@ def svg_clases(cajas, colder, datos):
                      f'aria-label="Operación {html.escape(completo)}"><title>{html.escape(completo)}</title>'
                      f'<rect class="hit" x="{x+2}" y="{ry}" width="{w-4}" height="{LINEA}"/>'
                      f'<text x="{x+10}" y="{ry+LINEA-8}" class="mb">{html.escape(txt)}</text></g>')
-        g.append(f'<a class="vs" href="{vscode(d)}" aria-label="Abrir {nom} en VS Code, línea {d["linea"]}">'
+        g.append(f'<a class="vs" {vscode(d)} aria-label="Abrir {nom} en VS Code, línea {d["linea"]}">'
                  f'<rect x="{x+w-126}" y="{y-22}" width="126" height="22" rx="5"/>'
                  f'<text x="{x+w-63}" y="{y-7}" text-anchor="middle">Ver en VS Code ↗</text></a>')
         g.append('</g>')
@@ -426,7 +429,7 @@ def vista_lista(cajas, datos):
     for nom, c in cajas.items():
         d = datos[c["sim"]]
         o.append(f'<section class="cls"><h3><button class="lk" data-k="{html.escape(c["sim"])}">{nom}</button> '
-                 f'<a class="btn" href="{vscode(d)}" aria-label="Abrir {nom} en VS Code">Ver en VS Code ↗</a></h3>')
+                 f'<a class="btn" {vscode(d)} aria-label="Abrir {nom} en VS Code">Ver en VS Code ↗</a></h3>')
         if c["est"]:
             o.append(f'<p class="meta">{c["est"]}{" · abstracta" if nom in ABSTRACTAS else ""} · {d["archivo"]}</p>')
         for titulo, lista in (("Atributos", c["attrs"]), ("Operaciones", c["ops"])):
@@ -445,7 +448,7 @@ def vista_lista(cajas, datos):
     return "".join(o)
 
 
-PLANTILLA = r"""<!doctype html><html lang="es"><head><meta charset="utf-8">
+PLANTILLA = r"""<!doctype html><html lang="es"><head><meta charset="utf-8"><script>if(parent!==window)document.documentElement.classList.add('emb')</script>
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>CRCE · diagramas vinculados al código</title>
 <style>
 :root{--bg:#f1f2f7;--card:#fff;--fg:#171a23;--mut:#4c5466;--lin:#566075;--acc:#4338ca;--accdk:#312e81;--mark:#dfe3fb;--marksoft:#eef0fd;--foco:#c2410c;--cabbg:#eceefa;--gut:#f4f5fa;--pt:#c9cde0;
@@ -454,6 +457,7 @@ PLANTILLA = r"""<!doctype html><html lang="es"><head><meta charset="utf-8">
 body{margin:0;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--fg);background:var(--bg);display:flex;flex-direction:column}
 .skip{position:absolute;left:8px;top:-60px;background:var(--card);color:var(--fg);padding:10px 14px;border:2px solid var(--acc);z-index:99;border-radius:8px}
 .skip:focus{top:8px}
+@media screen{html.emb header{padding-left:64px}}
 header{background:var(--card);padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;box-shadow:var(--sh1);position:relative;z-index:3}
 header h1{font-size:17px;font-weight:700;letter-spacing:-.01em;margin:0;flex:1 1 260px}
 header h1 small{display:block;font-weight:400;font-size:13px;color:var(--mut);letter-spacing:0}
@@ -546,6 +550,7 @@ pre .l::before{content:attr(data-n);display:inline-block;width:3.4em;padding-rig
 <button class="tab" role="tab" id="t-c" aria-controls="v-c" aria-selected="true">Modelo de clases</button>
 <button class="tab" role="tab" id="t-e" aria-controls="v-e" aria-selected="false" tabindex="-1">Estados de la misión</button>
 <button class="tab" role="tab" id="t-l" aria-controls="v-l" aria-selected="false" tabindex="-1">Vista en lista</button></div>
+<button class="tool" id="irp" hidden style="min-height:38px;padding:5px 14px">▶ Presentación</button>
 </header>
 <main>
 <section id="izq" aria-label="Diagrama">
@@ -581,10 +586,17 @@ function resaltar(c,n0){
   o+='<span class='+(m[1]?'c':m[2]?'s':m[3]?'d':'k')+'>'+esc(m[0])+'</span>';u=re.lastIndex}
  o+=esc(c.slice(u));
  return o.split('\n').map((l,i)=>'<span class="l" data-n="'+(n0+i)+'">'+(l||' ')+'</span>').join('')}
-function vsc(d){return 'vscode://file/'+d.abs+':'+d.linea}
+const RAIZ=location.protocol==='file:'?location.pathname.replace(/\/docs\/[^\/]*$/,''):null;
+const ETQ=RAIZ===null?'Ver en GitHub ↗':'Ver en VS Code ↗';
+function vsc(d){return RAIZ!==null?'vscode://file'+RAIZ+'/'+d.archivo+':'+d.linea:'https://github.com/franacu/ProyectoFinal-PP5/blob/HEAD/'+d.archivo+'#L'+d.linea}
+function abrirCodigo(d){if(RAIZ!==null)location.href=vsc(d);else window.open(vsc(d),'_blank','noopener')}
+function enlaces(){$$('a[data-a]').forEach(a=>{a.setAttribute('href',vsc({archivo:a.dataset.a,linea:a.dataset.l}));
+ if(RAIZ===null){a.setAttribute('target','_blank');a.setAttribute('rel','noopener');(a.querySelector('text')||a).textContent=ETQ;
+  const al=a.getAttribute('aria-label');if(al)a.setAttribute('aria-label',al.replace('VS Code','GitHub'))}})}
+enlaces();
 function bloque(k,titulo){const d=D[k];if(!d)return '<p class="vacio">No encontré '+esc(k)+' en el código.</p>';
  return '<h3>'+esc(titulo||d.titulo)+'</h3><p class="meta">'+esc(d.archivo)+' · líneas '+d.linea+'–'+d.fin+'</p>'+
- '<div class="acciones"><a class="btn" href="'+vsc(d)+'">Ver en VS Code ↗</a></div>'+
+ '<div class="acciones"><a class="btn" href="'+vsc(d)+'"'+(RAIZ===null?' target="_blank" rel="noopener"':'')+'>'+ETQ+'</a></div>'+
  (d.doc?'<div class="doc">'+esc(d.doc)+'</div>':'')+'<pre tabindex="0" aria-label="Código de '+esc(d.simbolo)+'">'+resaltar(d.codigo,d.linea)+'</pre>'}
 function marcar(el){$$('.sel').forEach(x=>x.classList.remove('sel'));if(el)el.classList.add('sel')}
 const reducido=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -598,7 +610,8 @@ function centrar(el){const r=el.getBoundingClientRect(),l=len.getBoundingClientR
  const arriba=r.height>l.height*.8?40:Math.max(40,(l.height-r.height)/2);
  len.scrollTo({left:len.scrollLeft+r.left-l.left-Math.max(30,(l.width-r.width)/2),top:len.scrollTop+r.top-l.top-arriba,behavior:reducido?'auto':'smooth'})}
 addEventListener('message',e=>{const m=e.data||{};if(m.irAClase)irAClase(m.irAClase)});
-addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(e.key==='p'&&parent!==window)parent.postMessage({modo:'presentacion'},'*')});
+if(parent!==window){const b=document.getElementById('irp');b.hidden=false;b.onclick=()=>parent.postMessage({modo:'presentacion'},'*')}
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(e.key==='p'&&parent!==window)parent.postMessage({modo:'presentacion'},'*');if(e.key==='m'&&parent!==window)parent.postMessage({menu:true},'*')});
 function irAClase(c){irA($('#t-c'));const n=$('#svgc .nodo[data-k="'+c+'"]');if(!n)return;
  mostrar(n);centrar(n);n.focus({preventScroll:true})}
 const TXT={a:'se asocia con',c:'contiene',d:'consulta a',h:'hereda de'};
@@ -637,7 +650,7 @@ document.addEventListener('keydown',e=>{
  const mi=t.closest&&t.closest('.mi'),nodo=t.closest&&t.closest('.nodo'),tr=t.closest&&t.closest('.trans');
  const cur=mi||tr||nodo;
  if(cur&&(e.key==='Enter'||e.key===' ')){e.preventDefault();mostrar(cur);return}
- if(cur&&(e.key==='v'||e.key==='V')){const d=D[cur.dataset.k];if(d){location.href=vsc(d)}return}
+ if(cur&&(e.key==='v'||e.key==='V')){const d=D[cur.dataset.k];if(d){abrirCodigo(d)}return}
  if(mi){const l=miembros(nodo),i=l.indexOf(mi);
   if(e.key==='ArrowDown'){e.preventDefault();(l[i+1]||mi).focus()}
   else if(e.key==='ArrowUp'){e.preventDefault();(l[i-1]||nodo).focus()}
@@ -691,7 +704,7 @@ def main():
     cajas, colder = disenar(datos)
     for nom, (arch, sim, _) in CLASES.items():
         datos[sim] = codigo(arch, sim, f"Clase {nom}")
-    pedidos = {c for c, *_ in ESTADOS.values()}
+    pedidos = list(dict.fromkeys(c for c, *_ in ESTADOS.values()))  # sin repetidos y en orden fijo
     for c in pedidos:
         datos[c] = codigo("dominio/mision.py", c, f"Estado {c}")
     for o, _, op in TRANSICIONES:

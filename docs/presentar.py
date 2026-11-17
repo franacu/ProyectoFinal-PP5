@@ -94,7 +94,7 @@ def paso_codigo(p):
             raise SystemExit(f"Falta la decisión de {p['simbolo']} · {t}")
         notas.append(dict(linea=ubic[i], termino=t, que=largo, porque=w, ejemplo=ejemplo,
                           problema=dec[0], otra=dec[1], eleccion=dec[2]))
-    cab = (f'<div class="por-que"><b>Por qué existe:</b> {esc(p["por_que"])}</div>')
+    cab = (f'<div class="por-que"><b>Por qué existe:</b> {md(p["por_que"])}</div>')
     cuerpo = (f'{cab}<div class="dos"><div class="codigo"><div class="ruta">{esc(p["archivo"])}:{ini}</div>{filas}</div>'
               f'<aside class="nota" aria-live="polite"><div class="vacio">Clic para ver línea por línea.</div></aside></div>')
     return cuerpo, len(notas), notas
@@ -302,7 +302,7 @@ pre.ej{margin:6px 0 10px;background:#1b1d33;color:#dfe2f7;border-radius:8px;padd
 <button id="atras">← Atrás</button><button id="sig">Siguiente →</button><button id="fs" aria-label="Pantalla completa">Pantalla completa</button></header>
 <div id="barra"><i></i></div>
 <main id="escena">__PASOS__</main>
-<footer><span>Modelo hasta ahora:</span><span id="mapa" style="display:flex;gap:6px;flex-wrap:wrap"></span><span id="estado"></span></footer>
+<footer><span>Modelo hasta ahora:</span><span id="mapa" style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;min-width:0;flex:1"></span><span id="estado"></span></footer>
 <script>
 const META=__META__;let i=0,k=0;
 const $=s=>document.querySelector(s),pasos=[...document.querySelectorAll('.paso')];

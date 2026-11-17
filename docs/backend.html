@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRCE · Backend</title>
+<style>
+:root{--bg:#0b1020;--panel:#121a2d;--panel2:#18243b;--text:#eef3ff;--muted:#9eacc6;--accent:#71d5c3;--line:#2a3854;--code:#080d18;--gold:#f3c969}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.deck{height:100%;display:flex;flex-direction:column}.top{height:52px;padding:0 4vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);color:var(--muted);font-size:13px;letter-spacing:.04em}
+main{flex:1;display:grid;place-items:center;padding:3vh 5vw;min-height:0}.slide{display:none;width:min(1160px,100%);max-height:100%;animation:in .22s ease}.slide.active{display:block}@keyframes in{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:none}}
+.eyebrow{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px}
+h1{font-size:clamp(36px,5vw,66px);line-height:1.02;letter-spacing:-.04em;margin:0 0 18px}h2{font-size:clamp(29px,3.5vw,46px);letter-spacing:-.035em;margin:0 0 22px}
+.lead{font-size:clamp(17px,1.8vw,22px);line-height:1.5;color:#c5d0e4;max-width:850px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}.card h3{margin:0 0 12px;font-size:18px}.muted{color:var(--muted)}ul{margin:10px 0 0;padding-left:20px;color:#c5d0e4;line-height:1.65}li{margin:4px 0}.tag{display:inline-block;color:var(--accent);border:1px solid #32665e;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:700;margin:0 6px 7px 0}
+pre{margin:0;background:var(--code);border:1px solid #26334b;border-radius:12px;padding:18px;overflow:auto;max-height:53vh;color:#e6edf8;font:clamp(11px,.95vw,14px)/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#bce9df}.explain{font-size:16px;line-height:1.6;color:#c5d0e4}.explain strong{color:var(--text)}.callout{border-left:3px solid var(--accent);padding:10px 14px;background:#10242a;border-radius:0 10px 10px 0;color:#cdebe5;margin-top:14px}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:22px}.node{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-weight:650}.arrow{color:var(--accent);font-size:20px}
+.bottom{height:64px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 4vw;color:var(--muted);font-size:13px}.controls{display:flex;gap:8px;align-items:center}button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 14px;border-radius:9px;cursor:pointer;font-weight:650}button:hover{border-color:var(--accent)}.count{min-width:64px;text-align:center}
+@media(max-width:760px){main{padding:20px}.grid{grid-template-columns:1fr;gap:12px}.card{padding:15px}pre{max-height:35vh}.top{padding:0 20px}.bottom{padding:0 20px}.slide{overflow:auto;max-height:100%}}
+</style>
+</head>
+<body>
+<div class="deck">
+<header class="top"><span>CRCE · CENTRO REGIONAL DE COORDINACIÓN DE EMERGENCIAS</span><span>POO V · BACKEND</span></header>
+<main>
+<section class="slide active">
+ <div class="eyebrow">01 · visión general</div>
+ <h1>El backend: reglas del sistema</h1>
+ <p class="lead">El núcleo del CRCE está implementado como un <strong>dominio en Python</strong>. Modela avisos, emergencias, misiones y recursos, y controla qué operaciones están permitidas.</p>
+ <div class="flow"><div class="node">Aviso</div><span class="arrow">→</span><div class="node">Emergencia</div><span class="arrow">→</span><div class="node">Misión</div><span class="arrow">→</span><div class="node">Unidad</div></div>
+ <div class="callout">No es un servidor web ni una API REST: el repositorio implementa la lógica de negocio del dominio. La interfaz/documentación está en páginas HTML estáticas.</div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">02 · configuración y módulos</div>
+ <h2>Cómo se organizó el código</h2>
+ <div class="grid">
+  <div class="card"><h3>Configuración del proyecto</h3><pre>[project]
+name = "crce"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8.3.0"]</pre><p class="explain">En <code>pyproject.toml</code> se declara Python 3.13+, sin dependencias de producción. <strong>pytest</strong> se usa para las pruebas.</p></div>
+  <div class="card"><h3>Separación por responsabilidad</h3><pre>dominio/
+  aviso.py
+  emergencia.py
+  mision.py
+  unidad.py
+  flota.py
+  vehiculos.py
+  personal.py
+  equipamiento.py
+  historial.py
+  catalogos.py
+  errores.py
+  valores.py
+  distribucion.py
+
+tests/</pre><p class="explain">Cada módulo concentra una parte del problema. Los módulos del dominio se importan entre sí y colaboran; no hay un framework externo.</p></div>
+ </div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">03 · dominio/aviso.py</div>
+ <h2>El aviso controla su propio ciclo de vida</h2>
+ <div class="grid">
+  <div><pre>self._estado = _PENDIENTE
+self._notas = []
+self._descarte = None
+
+def descartar(self, operador_id, justificacion, fecha_hora):
+    siguiente = self._estado.descartar()
+    descarte = Descarte(operador_id, justificacion, fecha_hora)
+    registro = Registro.de(
+        operador_id, fecha_hora,
+        Operacion.AVISO_DESCARTADO, self._id
+    )
+    self._descarte = descarte
+    self._estado = siguiente
+    self._registros.append(registro)</pre></div>
+  <div class="card"><h3>¿Qué hace?</h3><p class="explain">Un aviso nace <strong>pendiente</strong>. Puede aceptar notas, ser aceptado o descartado. Al descartar, primero valida el estado y construye los datos; recién después modifica el objeto.</p><h3>Conceptos POO</h3><span class="tag">Encapsulamiento</span><span class="tag">State</span><span class="tag">Validación</span><div class="callout">El estado decide si la operación está permitida. Un aviso ya aceptado no puede volver a descartarse.</div></div>
+ </div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">04 · dominio/mision.py</div>
+ <h2>Una misión, distintas especializaciones</h2>
+ <div class="grid">
+  <div><pre>class Mision(ABC):
+    @abstractmethod
+    def verificar_vehiculo(self, vehiculo):
+        ...
+
+    @abstractmethod
+    def verificar_equipamiento(self, unidad):
+        ...
+
+class Evacuacion(Mision):
+    def verificar_vehiculo(self, vehiculo):
+        vehiculo.verificar_evacuacion(self._cantidad)
+
+class Rescate(Mision):
+    def verificar_vehiculo(self, vehiculo):
+        vehiculo.verificar_rescate()
+
+class AsistenciaSanitaria(Mision):
+    def verificar_vehiculo(self, vehiculo):
+        vehiculo.verificar_asistencia()</pre></div>
+  <div class="card"><h3>¿Qué hace?</h3><p class="explain"><code>Mision</code> define el contrato común. Las clases concretas implementan los requisitos propios de evacuación, rescate y asistencia sanitaria.</p><h3>Conceptos POO</h3><span class="tag">Abstracción</span><span class="tag">Herencia</span><span class="tag">Polimorfismo</span><div class="callout">El resto del sistema trabaja con una referencia <code>Mision</code> sin necesitar preguntar qué clase concreta recibió.</div></div>
+ </div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">05 · dominio/unidad.py + vehiculos.py</div>
+ <h2>La unidad verifica si puede responder</h2>
+ <div class="grid">
+  <div><pre>def comprometer(self, mision):
+    self._condicion.verificar_habilitada()
+    if self._mision_id is not None:
+        raise UnidadOcupada(...)
+    self._vehiculo.verificar_operativo()
+    mision.verificar_vehiculo(self._vehiculo)
+    mision.verificar_personal(self.personal)
+    mision.verificar_equipamiento(self)
+    self._mision_id = mision.id</pre></div>
+  <div class="card"><h3>¿Qué hace?</h3><p class="explain">Antes de reservar la unidad, comprueba que esté habilitada, libre y que tenga vehículo, personal y equipamiento compatibles.</p><h3>¿Dónde aparece el polimorfismo?</h3><p class="explain">La misión consulta al vehículo mediante métodos como <code>verificar_rescate()</code> o <code>verificar_evacuacion()</code>. Cada tipo de vehículo responde según sus capacidades.</p><span class="tag">Composición</span><span class="tag">Delegación</span><span class="tag">Polimorfismo</span></div>
+ </div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">06 · dominio/flota.py + emergencia.py</div>
+ <h2>Consistencia global y cierre seguro</h2>
+ <div class="grid">
+  <div class="card"><h3>Flota · recursos únicos</h3><pre>for persona in unidad.personal:
+    self._exigir_persona_libre(persona.id, None)
+
+self._exigir_vehiculo_libre(unidad.vehiculo.id, None)
+
+for equipo in unidad.equipamiento:
+    self._exigir_equipo_libre(equipo.id, None)
+
+self._unidades[unidad.id] = unidad</pre><p class="explain">La flota controla todas las unidades para impedir que una persona, vehículo o equipo quede asignado a dos.</p></div>
+  <div class="card"><h3>Emergencia · cierre</h3><pre>def cerrar(self, misiones):
+    misiones = tuple(misiones)
+    for mision in misiones:
+        mision.verificar_concluida()
+    if not any(m.es_exitosa() for m in misiones):
+        raise SinMisionExitosa(...)
+    return _CERRADA</pre><p class="explain">No se puede cerrar si hay misiones sin concluir. Además, exige al menos una misión finalizada satisfactoriamente.</p></div>
+ </div>
+ <div class="callout">Las reglas que involucran a varios objetos se ubican en el componente que puede garantizar la consistencia.</div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">07 · historial.py + errores.py</div>
+ <h2>Registrar lo ocurrido y explicar los rechazos</h2>
+ <div class="grid">
+  <div><pre>@dataclass(frozen=True, slots=True)
+class Registro:
+    actor_id: str
+    fecha_hora: datetime
+    operacion: Operacion
+    recursos: tuple[str, ...]
+    detalle: tuple[tuple[str, str], ...] = ()
+
+    @classmethod
+    def de(cls, actor_id, fecha_hora, operacion,
+           *recursos, **detalle):
+        return cls(
+            actor_id, fecha_hora, operacion,
+            tuple(recursos),
+            tuple((k, str(v)) for k, v in detalle.items())
+        )</pre></div>
+  <div class="card"><h3>Historial</h3><p class="explain"><code>Registro</code> es inmutable: identifica quién hizo qué, cuándo y sobre qué recursos. Los agregados exponen sus registros como tuplas.</p><h3>Errores del dominio</h3><p class="explain"><code>errores.py</code> define excepciones específicas, por ejemplo <code>UnidadOcupada</code>, <code>PersonalInsuficiente</code> o <code>VehiculoIncompatible</code>.</p><span class="tag">Dataclass</span><span class="tag">Inmutabilidad</span><span class="tag">Excepciones propias</span></div>
+ </div>
+</section>
+
+<section class="slide">
+ <div class="eyebrow">08 · reglas compartidas y pruebas</div>
+ <h2>Cómo se comprueba que el diseño funciona</h2>
+ <div class="grid">
+  <div class="card"><h3>Archivos de soporte</h3><ul><li><code>catalogos.py</code>: enums para tipos, estados y competencias.</li><li><code>valores.py</code>: <code>Ubicacion</code> y validaciones comunes.</li><li><code>distribucion.py</code>: busca si personas distintas cubren los puestos requeridos.</li><li><code>personal.py</code>, <code>equipamiento.py</code> y <code>vehiculos.py</code>: modelan los recursos.</li></ul></div>
+  <div class="card"><h3>Pruebas automatizadas</h3><pre>uv sync
+uv run pytest</pre><p class="explain">Los tests verifican avisos, asignaciones, ejecución, emergencias y recursos. <code>test_diseno.py</code> controla reglas de arquitectura: sin <code>isinstance</code>/<code>type</code>, solo biblioteca estándar y sin consultar la hora del sistema.</p><div class="callout">El README del repositorio indica 204 pruebas aprobadas.</div></div>
+ </div>
+</section>
+</main>
+<footer class="bottom"><span>← → o Espacio para navegar · F pantalla completa</span><div class="controls"><button id="prev">Anterior</button><span class="count" id="count">1 / 8</span><button id="next">Siguiente</button></div></footer>
+</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')];let current=0;
+function show(n){current=Math.max(0,Math.min(slides.length-1,n));slides.forEach((s,i)=>s.classList.toggle('active',i===current));document.getElementById('count').textContent=(current+1)+' / '+slides.length;document.getElementById('prev').disabled=current===0;document.getElementById('next').disabled=current===slides.length-1}
+document.getElementById('prev').addEventListener('click',()=>show(current-1));document.getElementById('next').addEventListener('click',()=>show(current+1));
+document.addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();show(current+1)}if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(current-1)}if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()}});
+show(0);
+</script>
+</body></html>
