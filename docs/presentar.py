@@ -14,6 +14,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 import diagrama_interactivo as d  # noqa: E402
+from escenarios_guion import ESCENARIOS, PREAMBULO  # noqa: E402
 from guion import ALTERNATIVA, DECISION, EXPLICA, PASOS  # noqa: E402
 
 
@@ -154,6 +155,50 @@ def paso_relaciones(p):
     return cuerpo, len(notas), notas
 
 
+ROTULO = {"historia": "Situación", "sin": "Sin esta decisión (ejemplo hipotético)", "problema": "Qué sale mal",
+          "con": "Con el proyecto (código real)", "conclusion": "Cómo se lo explico al profesor"}
+
+
+def correr(codigo, ns):
+    """Ejecuta el código como en una consola: muestra lo impreso y el valor de la última expresión.
+    Devuelve (texto, hubo_error)."""
+    import ast
+    import contextlib
+    import io
+    buf = io.StringIO()
+    arbol = ast.parse(codigo)
+    error = False
+    with contextlib.redirect_stdout(buf):
+        try:
+            for nodo in arbol.body:
+                if isinstance(nodo, ast.Expr) and not (isinstance(nodo.value, ast.Call) and getattr(nodo.value.func, "id", "") == "print"):
+                    valor = eval(compile(ast.Expression(nodo.value), "<ejemplo>", "eval"), ns)
+                    if valor is not None:
+                        print(repr(valor))
+                else:
+                    exec(compile(ast.Module([nodo], []), "<ejemplo>", "exec"), ns)
+        except Exception as exc:  # noqa: BLE001 - se muestra al público tal cual
+            error = True
+            print(f"{type(exc).__name__}: {exc}")
+    return buf.getvalue().rstrip("\n"), error
+
+
+def paso_escenario(p):
+    esc_ = ESCENARIOS[p["clave"]]
+    ns = {"RAIZ": str(AQUI.parent)}
+    exec(PREAMBULO, ns)
+    partes = []
+    for i, (clase, titulo, contenido) in enumerate(esc_["bloques"], 1):
+        if clase in ("sin", "con"):
+            salida, error = correr(contenido, ns)
+            cuerpo = (f'<pre class="cd">{esc(contenido)}</pre>'
+                      f'<pre class="out{" err" if error else ""}">{esc(salida) or "(sin salida)"}</pre>')
+        else:
+            cuerpo = f'<p>{md(contenido)}</p>'
+        partes.append(f'<div class="bq b-{clase}" data-k="{i}"><div class="bh">{esc(ROTULO[clase])}{(' · <span>' + esc(titulo) + '</span>') if clase in ('sin', 'con') else ''}</div>{cuerpo}</div>')
+    return f'<div class="escenario">{"".join(partes)}</div>', len(esc_["bloques"]), esc_["titulo"]
+
+
 def construir():
     secciones, meta = [], []
     for idx, p in enumerate(PASOS):
@@ -164,6 +209,9 @@ def construir():
             cuerpo, n = paso_extraer(p)
         elif p["tipo"] == "resumen":
             cuerpo, n = paso_resumen(p)
+        elif p["tipo"] == "escenario":
+            cuerpo, n, p["titulo"] = paso_escenario(p)
+            p["titulo"] = "0 · " + p["titulo"]
         elif p["tipo"] == "relaciones":
             cuerpo, n, notas = paso_relaciones(p)
         else:
@@ -212,6 +260,16 @@ footer{background:#fff;box-shadow:0 -1px 0 #e3e5ee;padding:8px 20px;display:flex
 .chip{border:0;cursor:pointer;padding:3px 11px;border-radius:999px;background:#e9e8fb;color:var(--ac2);font:600 13px ui-monospace,Menlo,monospace}.chip.nuevo{background:var(--ac);color:#fff}
 #estado{margin-left:auto;color:var(--mut)}
 .fin{font-size:30px;color:var(--ac2)}
+.escenario{display:grid;gap:12px;max-width:1100px}
+.bq{display:none;background:#fff;border-radius:12px;box-shadow:var(--sh);padding:14px 18px;border-left:6px solid #9aa0c8}
+.bq.on{display:block;animation:ent .3s}.bq p{margin:6px 0 0;font-size:19px}
+.bh{font:700 12px system-ui;color:var(--mut);text-transform:none}.bh span{color:var(--ink);font-size:14px}
+.b-sin{border-left-color:#e08a00}.b-problema{border-left-color:var(--rojo);background:#fff5f6}.b-problema .bh{color:var(--rojo)}
+.b-con{border-left-color:#1f9d55}.b-conclusion{border-left-color:var(--ac);background:#eceafd}.b-conclusion p{font-weight:600;color:var(--ac2)}
+pre.cd{margin:8px 0 0;background:#1b1d33;color:#dfe2f7;border-radius:8px 8px 0 0;padding:10px 14px;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;user-select:text}
+pre.out{margin:0;background:#0f1124;color:#8ff0b0;border-radius:0 0 8px 8px;padding:8px 14px;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;user-select:text}
+pre.out::before{content:"salida real";display:block;font:700 11px system-ui;color:#7a80ad;margin-bottom:3px}
+pre.out.err{color:#ff9aa5}
 .lienzo{background:#fff;border-radius:12px;box-shadow:var(--sh);padding:14px}
 svg.rel{width:100%;height:auto;display:block}
 svg.rel [data-k]{opacity:0;transition:opacity .35s}svg.rel [data-k].on{opacity:1}
@@ -268,8 +326,9 @@ function pintar(){
  $('#estado').textContent=`Paso ${i+1}/${META.length} · clic ${k}/${m.n}`;
  $('#barra i').style.width=((i+(m.n?k/m.n:1))/META.length*100)+'%';sel.value=i;
 }
-function sig(){if(k<META[i].n)k++;else if(i<META.length-1){i++;k=0}pintar()}
-function atras(){if(k>0)k--;else if(i>0){i--;k=META[i].n}pintar()}
+function enfocarUltimo(){const p=pasos[i];if(META[i].tipo==='escenario'&&k>0){const v=p.querySelectorAll('.bq.on');const u=v[v.length-1];if(u)u.scrollIntoView({block:'nearest',behavior:'auto'})}}
+function sig(){if(k<META[i].n)k++;else if(i<META.length-1){i++;k=0}pintar();enfocarUltimo()}
+function atras(){if(k>0)k--;else if(i>0){i--;k=META[i].n}pintar();enfocarUltimo()}
 document.addEventListener('keydown',e=>{if(e.target.tagName==='SELECT')return;
  if([' ','ArrowRight','Enter','PageDown'].includes(e.key)){e.preventDefault();sig()}
  else if(['ArrowLeft','Backspace','PageUp'].includes(e.key)){e.preventDefault();atras()}
