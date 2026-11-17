@@ -14,7 +14,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 import diagrama_interactivo as d  # noqa: E402
-from guion import EXPLICA, PASOS  # noqa: E402
+from guion import ALTERNATIVA, DECISION, EXPLICA, PASOS  # noqa: E402
 
 
 def esc(t):
@@ -75,7 +75,11 @@ def paso_codigo(p):
     notas = []
     for i, (_, t, q, w) in enumerate(p["notas"]):
         largo, ejemplo = EXPLICA.get((p["archivo"], p["simbolo"], t), (q, ""))
-        notas.append(dict(linea=ubic[i], termino=t, que=largo, porque=w, ejemplo=ejemplo))
+        dec = DECISION.get((p["archivo"], p["simbolo"], t))
+        if dec is None:
+            raise SystemExit(f"Falta la decisión de {p['simbolo']} · {t}")
+        notas.append(dict(linea=ubic[i], termino=t, que=largo, porque=w, ejemplo=ejemplo,
+                          problema=dec[0], otra=dec[1], eleccion=dec[2]))
     cab = (f'<div class="por-que"><b>Por qué existe:</b> {esc(p["por_que"])}</div>')
     cuerpo = (f'{cab}<div class="dos"><div class="codigo"><div class="ruta">{esc(p["archivo"])}:{ini}</div>{filas}</div>'
               f'<aside class="nota" aria-live="polite"><div class="vacio">Clic para ver línea por línea.</div></aside></div>')
@@ -145,7 +149,8 @@ def paso_relaciones(p):
     cuerpo = (f'<div class="dos"><div class="lienzo">{svg}{leyenda}</div>'
               f'<aside class="nota" aria-live="polite"><div class="vacio">Clic para agregar la primera relación.</div></aside></div>')
     notas = [dict(origen=a["o"], destino=a["d"], tipo=COLOR_RELACION[a["tipo"]], mo=a["mo"], md=a["md"], frase=a["frase"],
-                  fuente=a["fuente"], porque=a["por_que"], codigo=a["codigo"]) for a in p["aristas"]]
+                  fuente=a["fuente"], porque=a["por_que"], codigo=a["codigo"],
+                  otra=ALTERNATIVA.get((a["o"], a["d"]), "")) for a in p["aristas"]]
     return cuerpo, len(notas), notas
 
 
@@ -201,8 +206,8 @@ mark.on{background:#ffd9dc;color:var(--rojo);font-weight:700;box-shadow:inset 0 
 .ruta{padding:0 16px 8px;color:#8f94c4;font-size:13px}
 .l{display:flex;padding:0 16px;opacity:.38;transition:opacity .2s,background .2s;white-space:pre-wrap;word-break:break-word}.l .c{flex:1;padding-left:8px;text-indent:0}.l .n{width:44px;color:#6e73a8;flex:none;text-align:right;padding-right:14px}
 .l.vista{opacity:.75}.l.act{opacity:1;background:#3b3f78;box-shadow:inset 4px 0 0 #ffb454}
-.nota{background:#fff;border-radius:12px;box-shadow:var(--sh);padding:18px 20px;position:sticky;top:0;min-height:170px;max-height:70vh;overflow:auto}
-.nota .t{font:700 22px system-ui;color:var(--ac2)}.nota .q{margin:8px 0;font-size:19px}.nota .w{color:var(--mut);font-size:17px}.nota .w b{color:var(--rojo)}.vacio{color:var(--mut)}
+.nota{background:#fff;border-radius:12px;box-shadow:var(--sh);padding:18px 20px;position:sticky;top:0;min-height:170px;max-height:calc(100vh - 230px);overflow:auto}
+.nota .t{font:700 22px system-ui;color:var(--ac2)}.nota .q{margin:8px 0;font-size:17px}.nota .w{color:var(--mut);font-size:17px}.nota .w b{color:var(--rojo)}.vacio{color:var(--mut)}
 footer{background:#fff;box-shadow:0 -1px 0 #e3e5ee;padding:8px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;cursor:default;min-height:44px}
 .chip{border:0;cursor:pointer;padding:3px 11px;border-radius:999px;background:#e9e8fb;color:var(--ac2);font:600 13px ui-monospace,Menlo,monospace}.chip.nuevo{background:var(--ac);color:#fff}
 #estado{margin-left:auto;color:var(--mut)}
@@ -217,8 +222,8 @@ svg.rel [data-k]{opacity:0;transition:opacity .35s}svg.rel [data-k].on{opacity:1
 .mult{font:700 14px system-ui;fill:var(--rojo)}.etq{font:600 13px system-ui;fill:#444a73;paint-order:stroke;stroke:#fff;stroke-width:4px}
 .ley{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-top:8px}.ley i{display:inline-block;width:18px;height:0;border-top:2px solid #312e81;vertical-align:middle;margin-right:5px}
 .ley .ld{border-top-style:dashed}.ley .lr{border-top-width:5px}
-pre.ej{margin:10px 0 0;background:#1b1d33;color:#dfe2f7;border-radius:8px;padding:10px 12px;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;user-select:text}
-.nota .e{font:700 13px system-ui;color:var(--mut);margin-top:12px}
+pre.ej{margin:6px 0 10px;background:#1b1d33;color:#dfe2f7;border-radius:8px;padding:10px 12px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;user-select:text}
+.nota .dec{margin-top:10px;padding:10px 12px;background:#f3f2ff;border-left:4px solid var(--ac);border-radius:6px;font-size:15.5px;line-height:1.4}.nota .dh{font:700 12px system-ui;color:var(--ac2);margin-top:8px}.nota .dh:first-child{margin-top:0}.nota .e{font:700 13px system-ui;color:var(--mut);margin-top:12px}
 .nota .fr{color:var(--rojo);font-weight:700}.nota .cod{margin-top:8px;font:14px ui-monospace,monospace;color:var(--ac2)}
 </style></head><body>
 <header><h1>CRCE · cómo se construyó el modelo</h1>
@@ -241,8 +246,12 @@ function pintar(){
    ls[n.linea].classList.add('act');const cd=p.querySelector('.codigo'),L=ls[n.linea];cd.scrollTo({top:Math.max(0,L.offsetTop-cd.clientHeight/2),behavior:'auto'});
    cart.innerHTML='<div class="t"></div><div class="q"></div><div class="w"></div>';
    cart.querySelector('.t').textContent=n.termino;cart.querySelector('.q').textContent=n.que;
-   if(n.ejemplo){const e1=document.createElement('div');e1.className='e';e1.textContent='Ejemplo';const pr=document.createElement('pre');pr.className='ej';pr.textContent=n.ejemplo;cart.querySelector('.q').after(e1,pr)}
-   cart.querySelector('.w').innerHTML='<b>Por qué acá:</b> ';cart.querySelector('.w').append(n.porque)}
+
+   cart.querySelector('.w').innerHTML='<b>Por qué acá:</b> ';cart.querySelector('.w').append(n.porque);
+   const dc=document.createElement('div');dc.className='dec';
+   [['Problema',n.problema],['Otra opción que se descartó',n.otra],['Por qué se eligió esto',n.eleccion]].forEach(([a,b])=>{const h=document.createElement('div');h.className='dh';h.textContent=a;const t=document.createElement('div');t.textContent=b;dc.append(h,t)});
+   cart.querySelector('.q').after(dc);
+   if(n.ejemplo){const e1=document.createElement('div');e1.className='e';e1.textContent='Ejemplo';const pr=document.createElement('pre');pr.className='ej';pr.textContent=n.ejemplo;dc.after(e1,pr)}}
   else cart.innerHTML='<div class="vacio">Clic para ver línea por línea.</div>';
  }else if(m.tipo==='relaciones'){
   p.querySelectorAll('[data-k]').forEach(e=>{e.classList.toggle('on',+e.dataset.k<=k);e.classList.toggle('cur',+e.dataset.k===k)});
@@ -251,7 +260,8 @@ function pintar(){
    add('t',r.origen+' → '+r.destino);add('q',r.tipo+(r.mo||r.md?' · '+(r.mo||'')+' a '+(r.md||''):''));
    if(r.frase){const f=add('q','');const b=document.createElement('span');b.className='fr';b.textContent='«'+r.frase+'»';f.append(b,' '+r.fuente)}
    const w=add('w','');const bb=document.createElement('b');bb.textContent='Por qué: ';w.append(bb,r.porque);
-   if(r.codigo)add('cod','En el código: '+r.codigo)}
+   if(r.codigo)add('cod','En el código: '+r.codigo);
+   if(r.otra){const dc=add('dec','');const h=document.createElement('div');h.className='dh';h.textContent='Otra opción que se descartó';const t=document.createElement('div');t.textContent=r.otra;dc.append(h,t)}}
   else cart.innerHTML='<div class="vacio">Clic para agregar la primera relación.</div>';
  }else{p.querySelectorAll('[data-k]').forEach(e=>e.classList.toggle('on',+e.dataset.k<=k))}
  const ch=mapaHasta();$('#mapa').innerHTML='';ch.forEach((c,x)=>{const s=document.createElement('button');s.title='Ver en el diagrama';s.onclick=ev=>{ev.stopPropagation();parent.postMessage({modo:'diagrama',clase:c},'*')};s.className='chip'+(x===ch.length-1&&m.clase&&k===0?' nuevo':'');s.textContent=c;$('#mapa').append(s)});
