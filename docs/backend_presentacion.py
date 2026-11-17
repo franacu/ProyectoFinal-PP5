@@ -35,6 +35,21 @@ def md(t):
     return re.sub(r"`(.+?)`", r"<code>\1</code>", t)
 
 
+def bloques(t):
+    """Texto de una nota en bloques: párrafos separados por línea en blanco,
+    listas con «- » y pasos numerados con «1. »."""
+    salida = []
+    for parrafo in t.strip().split("\n\n"):
+        lineas = [l.strip() for l in parrafo.strip().split("\n") if l.strip()]
+        if all(l.startswith("- ") for l in lineas):
+            salida.append("<ul>" + "".join(f"<li>{md(l[2:])}</li>" for l in lineas) + "</ul>")
+        elif all(re.match(r"\d+\. ", l) for l in lineas):
+            salida.append("<ol>" + "".join(f"<li>{md(l.split('. ', 1)[1])}</li>" for l in lineas) + "</ol>")
+        else:
+            salida.append(f"<p>{md(' '.join(lineas))}</p>")
+    return "".join(salida)
+
+
 # ───────────────────────── código: líneas visibles, colores y alcance de cada nota ─────────────────────────
 
 def sin_comentarios(lineas):
@@ -136,7 +151,7 @@ def diapositiva_codigo(p):
         f'<span class="c">{colorear(limpias[i])}</span></div>' for i in range(len(lineas)))
     notas = []
     for (aguja, titulo, que, para, _), i in zip(p["notas"], ubic):
-        notas.append(dict(a=i, b=alcance(limpias, ocultas, i), t=esc(titulo), q=md(que), p=md(para) if para else ""))
+        notas.append(dict(a=i, b=alcance(limpias, ocultas, i), t=esc(titulo), q=bloques(que), p=bloques(para) if para else ""))
     etiquetas, para_que, clase = bm.PASOS[p["simbolo"]]
     return dict(filas=filas, notas=notas, tags=etiquetas, para=md(para_que), por_que=md(p["por_que"]), clase=clase,
                 rango=(ini_l, fin_l))
@@ -395,6 +410,8 @@ pre.mini{margin:6px 0 0;background:var(--code);border:1px solid #26334b;border-r
 .dots span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--line);margin-left:4px}.dots span.on{background:var(--accent)}
 .nota h3{font-size:clamp(17px,1.6vw,22px);margin:0 0 8px;letter-spacing:-.01em}
 .nota .q2{font-size:clamp(14.5px,1.3vw,17.5px);line-height:1.55;color:var(--soft);margin:0 0 8px}.nota .q2 strong{color:var(--text)}
+.nota .q2 p{margin:0 0 .55em}.nota .q2 p:last-child{margin-bottom:0}
+.nota .q2 ul,.nota .q2 ol{margin:.2em 0 .55em;padding-left:1.25em}.nota .q2 li{margin:.25em 0}.nota .q2 li::marker{color:var(--accent);font-weight:700}
 .nota h4{margin:10px 0 4px;font-size:13px;color:var(--gold);font-weight:700}
 .nota .tags{margin-top:8px}.nota .pista{color:var(--muted);font-size:12.5px;margin:10px 0 0}
 .ver{background:none;border:1px solid var(--line);color:var(--accent);border-radius:8px;padding:3px 9px;font-size:11.5px;font-weight:650;cursor:pointer;letter-spacing:0;text-transform:none}.ver[hidden]{display:none}
@@ -483,8 +500,8 @@ function pintarCodigo(){
  }else{
   const n=m.notas[k-1];
   for(let x=n.a;x<=n.b;x++)if(ls[x])ls[x].classList.add('act');
-  z.append(mk('h3','',n.t),mk('p','q2',n.q));
-  if(n.p){z.append(mk('h4','','¿Para qué sirve?'),mk('p','q2',n.p))}
+  z.append(mk('h3','',n.t),mk('div','q2',n.q));
+  if(n.p){z.append(mk('h4','','¿Para qué sirve?'),mk('div','q2',n.p))}
   const t=mk('div','tags','');m.tags.forEach(x=>t.append(mk('span','tag',x)));z.append(t);
  }
  ajustarCodigo();
@@ -511,9 +528,10 @@ function ajustarCodigo(){
 function ajustarNota(){
  const n=slides[i].querySelector('.nota'),z=n&&n.querySelector('.zz');if(!z)return;
  z.style.zoom=1;n.style.overflowY='hidden';let zm=1;
- const ocupa=()=>z.scrollHeight+parseFloat(getComputedStyle(n).paddingTop)*2;
- while(ocupa()>n.clientHeight+1&&zm>.7){zm-=.04;z.style.zoom=zm}
- if(ocupa()>n.clientHeight+1)n.style.overflowY='auto';
+ const pad=parseFloat(getComputedStyle(n).paddingTop)*2,lim=(parseFloat(n.style.maxHeight)||n.clientHeight)-2;
+ const ocupa=()=>z.getBoundingClientRect().height+pad;   // alto real, ya con el zoom aplicado
+ while(ocupa()>lim&&zm>.7){zm-=.04;z.style.zoom=zm}
+ if(ocupa()>lim)n.style.overflowY='auto';
 }
 function ajustarSlide(){
  const s=slides[i];if(!s)return;s.style.zoom=1;const mn=$('#main'),cs=getComputedStyle(mn);

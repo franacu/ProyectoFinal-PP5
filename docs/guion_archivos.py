@@ -57,8 +57,9 @@ P += [
       n("from enum import Enum", "Importar de la biblioteca estándar",
         "`from módulo import nombre` trae una pieza de Python ya hecha. Enum viene en la biblioteca estándar: el dominio no usa librerías externas."),
       n("class Catalogo(Enum)", "Enum: una lista cerrada de opciones",
-        "Un Enum es un conjunto fijo de opciones con nombre. Catalogo es la base de todas las listas del enunciado: si un valor no está en la lista, no se puede construir.",
-        "Nunca entra al sistema un tipo o un nivel inventado."),
+        "Un **Enum** define un conjunto cerrado de constantes con nombre: una lista fija de opciones válidas.\n\n"
+        "**Catalogo** es la base de todas las listas del enunciado. Garantiza que un valor solo pueda ser uno de los elementos predefinidos: si no está en la lista, no se puede construir.",
+        "Nunca entra al sistema un tipo de situación o un nivel de gravedad inventado."),
       n("@classmethod", "@classmethod: un método de la clase",
         "Un método de clase se llama sobre la clase misma, sin crear objetos: TipoSituacion.contiene(x). Su primer parámetro, cls, es la clase."),
       n("return valor in tuple(cls)", "contiene(): ¿está en la lista?",
@@ -78,11 +79,18 @@ P += [
       n("from __future__", "Anotaciones de tipo",
         "Con esta línea se pueden escribir tipos como `-> Aviso` antes de que la clase exista. Los tipos (valor: str, -> bool) ayudan a leer y revisar el código; Python no los hace cumplir al ejecutar."),
       n("def hay_texto", "hay_texto(): ¿hay texto con contenido?",
-        "bool(valor) es falso para None y para ''; isspace() detecta texto de solo espacios. Con una pregunta se rechazan los tres casos. Se usa en todo el dominio para los datos obligatorios."),
+        "`return bool(valor) and not valor.isspace()` hace dos comprobaciones:\n\n"
+        "- `bool(valor)`: el valor no es nulo (None) ni está vacío ('').\n"
+        "- `not valor.isspace()`: no está compuesto solo por espacios en blanco.",
+        "Garantiza que un campo de texto obligatorio contenga caracteres reales y útiles. Se usa en todo el dominio."),
       n("return operator.index", "es_entero_positivo(): 1, 2, 3…",
-        "operator.index(valor) convierte a entero solo si es de verdad un entero; con texto, decimal o None lanza TypeError. `valor is not True` excluye True, que Python trata como 1."),
+        "Verifica que el valor sea un **número entero mayor a cero**.\n\n"
+        "- `operator.index(valor)` acepta solo enteros verdaderos: con texto, decimales o None lanza TypeError.\n"
+        "- `valor is not True` excluye explícitamente los booleanos, porque Python trata True como 1.",
+        "Rechaza capacidades o cantidades como 0, -3, 2.5, '8' o True."),
       n("except TypeError", "try / except: atrapar un error",
-        "Si dentro de try ocurre un TypeError, el programa no se corta: sigue por el except y devuelve False.")),
+        "Si el tipo de dato no es un entero válido, el TypeError se **captura** en el except: el programa no se interrumpe y la función responde False.",
+        "Quien pregunta recibe siempre un sí o un no, nunca una excepción inesperada.")),
  paso("val_ubicacion", 0, "valores.py: Ubicacion", VAL, R(VAL, "@dataclass", "raise DatoDeAvisoInvalido", antes=0),
       "§7.1: todo aviso informa dónde ocurre la situación.",
       n("@dataclass", "Inmutable y con campos cerrados",
@@ -142,33 +150,40 @@ P += [
       n("class _Estado(ABC)", "_Estado: las preguntas que todo estado responde",
         "ABC marca una clase abstracta: no se puede crear sola. @abstractmethod obliga a cada subclase a implementar el método. El guion bajo inicial (_Estado) avisa que es interno del módulo."),
       n("class _Pendiente", "Pendiente, Aceptado y Descartado",
-        "Las tres responden las mismas cuatro preguntas. Pendiente devuelve el estado siguiente; las otras dos lanzan AvisoNoPendiente. validar_descarte comprueba, al reconstruir un aviso, que su descarte tenga sentido para el estado."),
+        "Las tres responden las mismas cuatro preguntas. Pendiente devuelve el estado siguiente; las otras dos lanzan AvisoNoPendiente. validar_descarte comprueba que el descarte tenga sentido para el estado."),
       n("_PENDIENTE, _ACEPTADO", "Una sola instancia de cada estado",
-        "Los estados no guardan datos, así que se crea un único objeto de cada uno y se reutiliza. _ESTADO_POR_ETIQUETA es un diccionario que pasa del nombre público al objeto.")),
+        "Los estados no guardan datos propios, así que alcanza con **un único objeto de cada uno**, que se reutiliza en todos los avisos.\n\n"
+        "1. **Al cargar el módulo** se crean los tres objetos una sola vez (`_Pendiente()`, `_Aceptado()`, `_Descartado()`) y se guardan en variables privadas.\n"
+        "2. **Se arma el diccionario** `_ESTADO_POR_ETIQUETA`, que asocia cada nombre público con su objeto: «cuando busquen DESCARTADO, apunten al objeto ya creado».\n"
+        "3. **Cuando llega un aviso guardado en la base de datos** con la etiqueta DESCARTADO, se busca en el diccionario. No se crea un objeto nuevo: se entrega el mismo que ya estaba en memoria.",
+        "Se ahorra memoria y todos los avisos descartados comparten exactamente el mismo comportamiento.")),
  paso("avi_init", 2, "aviso.py: Aviso.__init__", AVI, (lambda r: (r[0], r[1] + 1))(R(AVI, "class Aviso:", "gravedad=gravedad_estimada.name.lower())")),
       "Un aviso nace válido, pendiente y con su primer registro.",
       n("_validar_datos(", "Validar antes de guardar nada",
+        "`_validar_datos` es una **función privada** del módulo (el guion bajo inicial lo indica): solo se usa dentro de aviso.py.\n\n"
         "Primero se validan todos los datos; si algo falla, el objeto no llega a crearse (R6)."),
       n("aviso_id or str(uuid.uuid4())", "La identidad del aviso",
-        "uuid.uuid4() genera un identificador único. `a or b` usa a si tiene valor y, si es None, usa b: se puede pasar un id (al reconstruir) o dejar que se genere."),
+        "`uuid.uuid4()` genera un **código único** para identificar el aviso.\n\n"
+        "La expresión `aviso_id or str(uuid.uuid4())` funciona como un valor por defecto:\n\n"
+        "- Si al crear el objeto se pasa un id existente (por ejemplo, al leerlo de la base de datos), se usa ese.\n"
+        "- Si no se pasa nada (aviso nuevo), se genera uno automáticamente.",
+        "Cada aviso tiene una identidad propia que no cambia en toda su vida."),
       n("self._descripcion = descripcion.strip()", "Atributos privados",
-        "El guion bajo inicial (self._id) marca el dato como interno: nadie de afuera lo toca. strip() saca los espacios sobrantes."),
+        "El **guion bajo inicial** (`self._id`) marca el dato como **privado**: es interno del aviso y nadie de afuera lo modifica.\n\n"
+        "`strip()` elimina los espacios en blanco y saltos de línea que quedan **al principio y al final** de un texto: '  Agua en la calle  ' queda como 'Agua en la calle'. "
+        "Un texto de solo espacios ('     ') quedaría vacío; por eso `_validar_datos` lo rechaza antes con hay_texto.",
+        "Se guarda siempre un texto limpio y nadie puede alterar los datos del aviso desde afuera."),
       n("self._estado: _Estado = _PENDIENTE", "Todo aviso nace pendiente",
         "Se guarda el estado como objeto (anotado `: _Estado`). Las listas de notas y registros empiezan vacías y el descarte en None (R1)."),
       n("Registro.de(reportante_id", "Nace con su primer registro",
-        "Deja constancia de que el aviso se registró. gravedad.name.lower() convierte ALTA en 'alta': name es el nombre del miembro del Enum.")),
- paso("avi_restaurar", 2, "aviso.py: Aviso.restaurar", AVI, R(AVI, "@classmethod", "return aviso"),
-      "Reconstruye un aviso que ya existía, para el repositorio de la base de datos.",
-      n("def restaurar", "restaurar(): reconstruir un aviso guardado",
-        "Es un @classmethod que devuelve un Aviso ya existente, con el estado, las notas y los registros que tenía, sin pasar por «nace pendiente»."),
-      n("*,", "El * solo: parámetros con nombre",
-        "Todo lo que va después del * se pasa con nombre (aviso_id=..., estado=...). Con tantos datos evita mezclar el orden."),
-      n("if estado not in", "Validar el estado y el descarte primero",
-        "Rechaza estados desconocidos, y el estado nuevo valida que su descarte sea coherente, antes de crear nada."),
-      n("aviso = cls(", "cls(...): el mismo constructor",
-        "Crea el aviso con el constructor normal para que se validen los datos igual que en uno nuevo; después pisa lo que cambia."),
-      n("aviso._notas = list(notas)", "Restaurar notas, descarte y registros",
-        "list(notas) copia la tupla a una lista editable por dentro. Los registros guardados solo reemplazan al registro inicial si vinieron.")),
+        "Al escribir `self._registros = [ ... ]` se crea una lista con **un único elemento**: el objeto que devuelve `Registro.de(...)`.\n\n"
+        "Ese registro se construye con:\n\n"
+        "- **Quién** lo hizo: `reportante_id`.\n"
+        "- **Cuándo**: `registrado_en`.\n"
+        "- **Qué acción**: `Operacion.AVISO_REGISTRADO`.\n"
+        "- **Sobre qué recurso**: el id del aviso, más el detalle (tipo y gravedad).\n\n"
+        "`gravedad.name.lower()` convierte ALTA en 'alta': `name` es el nombre del miembro del Enum.",
+        "El aviso guarda en memoria su primer evento histórico, que ya no se puede alterar (§9).")),
  paso("avi_operaciones", 2, "aviso.py: agregar_nota y descartar", AVI, R(AVI, "def agregar_nota", "return nota")[0:1] + (R(AVI, "def descartar(self, operador_id", "self._registros.append(registro)")[1],),
       "Cada operación pregunta, valida, arma lo nuevo y recién al final modifica.",
       n("self._estado.permitir_nota()", "agregar_nota(): preguntar y validar",
@@ -185,15 +200,26 @@ P += [
  paso("avi_lectura", 2, "aviso.py: lectura del aviso", AVI, R(AVI, "def id(self)", "return tuple(self._registros)", antes=1),
       "Todo se puede leer y nada se puede asignar desde afuera.",
       n("@property", "@property: leer sin poder escribir",
-        "Permite escribir aviso.id como si fuera un dato, pero sin setter: nadie lo puede reasignar."),
+        "Permite escribir `aviso.id` como si fuera un dato, pero **sin setter**: se puede leer y no se puede reasignar.\n\n"
+        "Lo mismo vale para reportante, ubicación, tipo, gravedad estimada, descripción y fecha de registro.",
+        "Si se pudiera hacer `aviso.descripcion = 'otra cosa'`, se perdería lo que informó el reportante y se rompería R3: las notas agregan información, nunca reemplazan los datos originales."),
       n("return self._estado.etiqueta", "estado: solo el nombre",
-        "Devuelve la etiqueta pública (EstadoAviso), nunca el objeto estado."),
-      n("return tuple(self._notas)", "Colecciones: se devuelven como tupla",
-        "tuple(...) hace una copia que no se puede modificar: aviso.notas.append(...) no existe, así no se saltea la validación de la nota.")),
+        "Devuelve la etiqueta pública (EstadoAviso.PENDIENTE, ACEPTADO o DESCARTADO), nunca el objeto estado interno.",
+        "Nadie puede escribir `aviso.estado = DESCARTADO` y saltear el descarte: quedaría un aviso descartado sin justificación ni fecha. El estado solo cambia a través de descartar() o aceptar()."),
+      n("return tuple(self._notas)", "notas: se devuelven como tupla",
+        "`tuple(...)` entrega una **copia que no se puede modificar**: `aviso.notas.append(...)` no existe.",
+        "Si se devolviera la lista interna, cualquiera podría agregar una nota a un aviso ya descartado o aceptado, o con un autor que no es el reportante, y se saltearían R2 y R5."),
+      n("return self._descarte", "descarte: un valor inmutable",
+        "Devuelve el objeto Descarte tal cual: como es `frozen`, se puede entregar sin copiarlo.",
+        "Nadie puede cambiar la justificación ni la fecha después de descartar: queda la explicación original (R4)."),
+      n("return tuple(self._registros)", "registros: el historial, solo lectura",
+        "También sale como tupla.",
+        "El historial no se puede editar ni borrar desde afuera: nadie falsea quién hizo qué ni cuándo (§9).")),
  paso("avi_validar", 2, "aviso.py: _validar_datos", AVI, R(AVI, "def _validar_datos", "fecha y hora de registro"),
       "R1: ningún dato obligatorio puede faltar.",
-      n("def _validar_datos", "Una función suelta del módulo",
-        "No pertenece a ninguna clase: es una función común. Es una cadena de ifs, uno por regla, y cada uno lanza el error de su motivo. Se usa en el constructor del aviso."),
+      n("def _validar_datos", "Una función privada del módulo",
+        "`_validar_datos` es una **función privada** (el guion bajo inicial lo indica): no pertenece a ninguna clase y solo se usa dentro de aviso.py, en el constructor del aviso.\n\n"
+        "Es una cadena de ifs, uno por regla, y cada uno lanza el error de su motivo."),
       n("not TipoSituacion.contiene", "Catálogo en acción",
         "Usa contiene() para rechazar tipos y gravedades fuera de la lista.")),
 ]
@@ -203,49 +229,95 @@ P += [
  paso("per_persona", 3, "personal.py: Persona", PER, R(PER, "@dataclass", "return competencia in"),
       "§5.3: una persona tiene una o varias competencias.",
       n("competencias: frozenset", "frozenset: un conjunto que no cambia",
-        "Un conjunto no tiene repetidos ni orden; frozenset además es inmutable. Es el tipo justo para «una o varias competencias»."),
+        "Un conjunto **no tiene repetidos ni orden**; frozenset además es **inmutable**: una vez creado no se le agregan ni quitan elementos.\n\n"
+        "- **Sin repetidos**: si se carga dos veces «Rescate», cuenta una sola.\n"
+        "- **Inmutable**: nadie puede quitarle una competencia a la persona mientras se verifica si una unidad cubre una misión.\n"
+        "- **Seguro para compartir**: la misma persona puede consultarse desde la unidad y desde la flota sin riesgo de que una parte del sistema la cambie a escondidas.",
+        "Es el tipo justo para «una o varias competencias»: lo que se verificó al asignar sigue siendo cierto después."),
       n("object.__setattr__", "Cambiar un campo de una clase frozen",
-        "Una clase frozen no deja asignar atributos, ni dentro de ella. object.__setattr__ es el camino para hacerlo una sola vez, al construir: acepta cualquier colección y la guarda como frozenset."),
+        "Una clase `frozen` no permite asignar atributos, ni siquiera desde adentro.\n\n"
+        "Esta línea usa `object.__setattr__` dentro de `__post_init__` (la continuación del constructor `__init__`) como **el único punto de inicialización permitido**: "
+        "acepta cualquier colección (lista, tupla, set) y guarda el valor ya blindado como frozenset.\n\n"
+        "Cuando el constructor termina, `frozen=True` sella el objeto por completo: queda estrictamente inmutable y bloquea cualquier modificación en el resto del programa."),
       n("if not all(", "all(): ¿todas cumplen?",
-        "all(...) es verdadero si cada elemento cumple. La expresión `Competencia.contiene(c) for c in ...` recorre las competencias una por una."),
+        "`all(...)` valida que **absolutamente todas** las competencias ingresadas existan en el catálogo oficial; "
+        "`Competencia.contiene(c) for c in ...` las recorre una por una.\n\n"
+        "Si al menos una no es válida, el operador `not` activa el error y se rechaza la creación de la persona.",
+        "No existe una persona con una competencia inventada."),
       n("def tiene", "tiene(): ¿sabe hacer esto?",
-        "`x in conjunto` pregunta si el elemento está en el conjunto y devuelve verdadero o falso.")),
+        "Es un método de **consulta rápida** que responde a la pregunta: «¿esta persona tiene la competencia X?».\n\n"
+        "`competencia in self.competencias` devuelve True o False.",
+        "Es lo que usa la distribución para saber quién puede ocupar cada puesto de una misión.")),
  paso("equ_equipo", 3, "equipamiento.py: Equipo", EQU, R(EQU, "@dataclass", "return replace"),
       "§5.5: el equipamiento tiene categoría y una condición operativa.",
       n("condicion: CondicionOperativa =", "Valor por defecto",
         "Si no se indica la condición, el equipo nace operativo. Un campo con `= valor` es opcional al crear."),
       n("def operativo", "operativo: una propiedad calculada",
-        "No guarda un dato: lo deduce. `is` compara si es exactamente el mismo objeto; en un Enum hay un solo objeto por miembro, así que es la forma correcta de comparar."),
+        "No guarda un dato: lo **deduce** a partir de la condición.\n\n"
+        "Usa `is` para preguntar: «¿la condición de este equipo es exactamente el mismo objeto OPERATIVO que está en el Enum?».\n\n"
+        "- Si son el mismo, la condición es OPERATIVO y devuelve **True**.\n"
+        "- Si no, devuelve **False**.\n\n"
+        "En un Enum existe un solo objeto por miembro, por eso `is` es la forma correcta de comparar.",
+        "Una misión de rescate puede preguntar `equipo.operativo` sin conocer el catálogo de condiciones."),
       n("def con_condicion", "con_condicion(): una copia con otra condición",
-        "replace(self, condicion=...) de dataclasses crea un objeto nuevo igual al anterior salvo ese campo. El original no cambia (es inmutable) y el constructor vuelve a validar.")),
+        "Como el equipo original **no se puede modificar** (es frozen), este método usa `replace()` para crear una **copia exacta** con la nueva condición, dejando el original intacto.\n\n"
+        "Al crearse la copia, el constructor vuelve a validar sus datos.",
+        "Para «reparar» un equipo fuera de servicio se reemplaza por su copia operativa, y nunca existe un equipo a medio cambiar.")),
  paso("veh_base", 3, "vehiculos.py: Vehiculo", VEH, R(VEH, "@dataclass(frozen=True, kw_only=True)", "no sirve para asistencia sanitaria"),
       "§5.4: cada categoría de vehículo sirve para una misión distinta.",
       n("kw_only=True", "kw_only: campos solo con nombre",
-        "Obliga a crear Vehiculo(id='v1'): los campos se pasan por nombre. Hace falta porque las subclases agregan campos obligatorios después de uno que ya tiene valor por defecto."),
+        "Sin `kw_only=True`, Python permite llenar los campos **por posición**, en orden y sin decir su nombre: en `Ambulancia('a1')` asume que 'a1' es el id.\n\n"
+        "¿Qué pasa si mañana alguien cambia el orden de los campos y pone primero la condición? `Ambulancia('a1')` intentaría guardar 'a1' como condición y el código se rompería sin avisar.\n\n"
+        "Con `kw_only=True`, Python **obliga a escribir el nombre** de cada campo: `Ambulancia(id='a1')`. No importa el orden: siempre queda claro que eso es el id.",
+        "Además es necesario técnicamente: TransportePersonas agrega un campo obligatorio (capacidad) después de uno que ya tiene valor por defecto (condición), y eso solo se permite con campos por nombre."),
+      n("condicion: CondicionOperativa =", "Un campo opcional con valor por defecto",
+        "`condicion: CondicionOperativa = CondicionOperativa.OPERATIVO` es la forma que tiene Python de decir: «este campo es **opcional** y, si no me lo das, por defecto vale **OPERATIVO**».\n\n"
+        "- `condicion`: el nombre del campo.\n"
+        "- `: CondicionOperativa`: su tipo, un miembro del catálogo.\n"
+        "- `= CondicionOperativa.OPERATIVO`: el valor que toma si no se indica.",
+        "Un vehículo nuevo se da de alta listo para usarse, sin tener que repetir la condición cada vez."),
       n("class Vehiculo(ABC)", "Una clase abstracta con propiedad abstracta",
         "`@property` junto con `@abstractmethod` obliga a cada subclase a definir su categoría. Vehiculo no se instancia directamente."),
       n("def __post_init__", "Validar id y condición",
         "Igual que en Ubicacion: se valida apenas se crea. La condición tiene que ser un miembro del catálogo."),
-      n("def operativo", "operativo y con_condicion",
-        "Igual que en Equipo: una propiedad calculada y una copia con otra condición."),
+      n("def operativo", "operativo: una propiedad calculada",
+        "Igual que en Equipo: no guarda un dato, lo **deduce**. Usa `is` para preguntar si la condición del vehículo es exactamente el objeto OPERATIVO del Enum.\n\n"
+        "- Si lo es, devuelve **True**: el vehículo puede salir a una misión.\n"
+        "- Si no, devuelve **False**: está fuera de servicio.",
+        "Es la pregunta que usa verificar_operativo() antes de cualquier asignación."),
+      n("def con_condicion", "con_condicion(): una copia con otra condición",
+        "Igual que en Equipo: como el vehículo **no se puede modificar**, `replace()` crea una **copia exacta** con la nueva condición y deja el original intacto.\n\n"
+        "La copia conserva su clase: una Ambulancia sigue siendo Ambulancia, y el constructor vuelve a validar sus datos.",
+        "Declarar un vehículo fuera de servicio, o devolverlo al servicio, nunca deja un objeto a medio cambiar."),
       n("def verificar_operativo", "verificar_operativo(): lanzar si no sirve",
         "Si el vehículo está fuera de servicio lanza VehiculoIncompatible con su id; si está operativo no hace nada."),
       n("def verificar_evacuacion", "Por defecto no sirve para nada",
-        "Tres preguntas: evacuar (recibe la cantidad), rescatar y asistir. Todas rechazan; cada categoría sobrescribe solo la suya. Lo no declarado queda prohibido.")),
+        "Tres preguntas: evacuar (recibe la cantidad), rescatar y asistir. En la clase base **todas rechazan**; cada categoría sobrescribe solo la suya.\n\n"
+        "Si mañana se agrega un vehículo nuevo (por ejemplo, un dron) y se olvida programar si puede evacuar, el sistema asumirá por defecto que **no puede** y lanzará un error.",
+        "Es preferible que el sistema rechace una misión a que envíe un vehículo no capacitado a una emergencia real. Lo no declarado queda prohibido.")),
  paso("veh_sub", 3, "vehiculos.py: las tres categorías", VEH, (R(VEH, "class TransportePersonas", "class TransportePersonas", antes=1)[0], R(VEH, "class Ambulancia", "pass")[1]),
       "Cada subclase habilita lo suyo.",
       n("class TransportePersonas", "TransportePersonas: capacidad propia",
         "Hereda de Vehiculo y agrega capacidad_evacuados, el campo propio de esta categoría."),
       n("super().__post_init__()", "super(): usar lo de la clase padre",
-        "super() llama al método de la clase padre. Acá se ejecuta primero la validación común (id y condición) y después la propia (capacidad entera positiva)."),
+        "`super()` llama al método de la clase padre.\n\n"
+        "1. Primero se ejecutan las validaciones de Vehiculo: id y condición válidos.\n"
+        "2. Después se agrega la regla propia: la capacidad de evacuados tiene que ser un entero positivo.",
+        "No se pierden las validaciones del padre y se rechaza cualquier capacidad errónea (0, negativa, decimal o texto)."),
       n("return CategoriaVehiculo.TRANSPORTE", "Implementar lo abstracto",
-        "Cada subclase responde su categoría, que Vehiculo había dejado abstracta."),
+        "La subclase completa la propiedad abstracta `categoria`, que el padre dejó sin implementar, devolviendo su miembro específico del Enum: TRANSPORTE_DE_PERSONAS."),
       n("def verificar_evacuacion", "Habilita evacuar según la capacidad",
         "Sobrescribe la pregunta de evacuar: acepta si la cantidad entra en la capacidad y rechaza si no."),
-      n("class VehiculoRescate", "VehiculoRescate: habilita rescatar",
-        "`pass` significa «no hacer nada»: no lanzar el error equivale a aceptar."),
-      n("class Ambulancia", "Ambulancia: habilita la asistencia sanitaria",
-        "Misma idea con verificar_asistencia. Evacuar y rescatar siguen rechazados por defecto.")),
+      n("return CategoriaVehiculo.VEHICULO_DE_RESCATE", "VehiculoRescate: su categoría",
+        "Lo mismo que en TransportePersonas: implementa la propiedad abstracta `categoria`, esta vez devolviendo `CategoriaVehiculo.VEHICULO_DE_RESCATE`."),
+      n("def verificar_rescate", "VehiculoRescate: habilita rescatar",
+        "Sobrescribe solo la pregunta de rescate. `pass` significa «no hacer nada»: no lanzar el error equivale a aceptar.\n\n"
+        "Evacuar y asistir siguen rechazados por defecto."),
+      n("return CategoriaVehiculo.AMBULANCIA", "Ambulancia: su categoría",
+        "Lo mismo que en VehiculoRescate: implementa la propiedad abstracta `categoria`, esta vez devolviendo `CategoriaVehiculo.AMBULANCIA`.",
+        "Así, cada vehículo define su propia identidad y el sistema sabe qué es sin usar condicionales."),
+      n("def verificar_asistencia", "Ambulancia: habilita la asistencia sanitaria",
+        "Misma idea con verificar_asistencia: `pass` acepta. Evacuar y rescatar siguen rechazados por defecto.")),
 ]
 
 # ═════════ 5 · DISTRIBUCIÓN Y UNIDAD ═════════

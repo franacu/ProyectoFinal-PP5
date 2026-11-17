@@ -186,7 +186,7 @@ def s_repo(m):
   <ul><li>Solo biblioteca estándar: lo verifica <code>test_diseno.py</code>.</li>
   <li><strong>pytest</strong> es la única dependencia, y solo para desarrollo.</li>
   <li>Cada módulo concentra una parte del problema; colaboran importándose entre sí.</li>
-  <li>No hay servidor, base de datos ni interfaz en esta entrega: el alcance es el <strong>dominio y sus reglas</strong>. La persistencia y la API se construyen encima; <code>Aviso.restaurar</code> ya reconstruye un aviso guardado.</li></ul>
+  <li>No hay servidor, base de datos ni interfaz en esta entrega: el alcance es el <strong>dominio y sus reglas</strong>. La persistencia y la API se construyen encima.</li></ul>
   <div class="callout">Las fechas entran como parámetro: el dominio nunca consulta el reloj, así las pruebas dan siempre el mismo resultado.</div></div>
 </div>""")
 
