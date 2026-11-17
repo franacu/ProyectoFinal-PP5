@@ -45,7 +45,7 @@ uv run python docs/crce.py
 ```
 
 (o `python3 docs/crce.py`; solo usa la biblioteca estándar). Crea `docs/crce.html`, `docs/diagrama.html`
-y `docs/presentar.html`.
+y `docs/backend_presentacion.html`.
 
 **5. Abrirla en el navegador**
 
@@ -109,8 +109,10 @@ tests/
   escenarios.py                             # armado de datos de ejemplo
 docs/
   avance-1.md
-  crce.py            # genera crce.html: barra lateral con presentación y diagramas
-  presentar.py       # presentación de un clic (guion.py tiene el guion)
+  crce.py                  # genera crce.html: barra lateral con presentación y diagramas
+  backend_presentacion.py  # la presentación: menú, recorrido general y un grupo por archivo
+  conformacion.py          # sección «Conformación del diagrama»: del enunciado a las clases y sus relaciones
+  guion_archivos.py        # las notas de cada diapositiva de código
   diagrama_interactivo.py  # diagramas vinculados al código
 ```
 

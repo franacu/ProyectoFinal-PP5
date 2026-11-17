@@ -1,6 +1,6 @@
 """Genera docs/crce.html: un solo lugar con menú ☰ para presentar el backend y ver los diagramas.
 
-Uso:  python3 docs/crce.py   (regenera diagrama.html, presentar.html, backend_presentacion.html y la carcasa)
+Uso:  python3 docs/crce.py   (regenera diagrama.html, backend_presentacion.html y la carcasa)
 Menú ☰ (tecla M):
   · Presentación (P): lista para elegir qué presentar (recorrido general o un grupo de archivos).
   · Diagramas (D): modelo de clases, estados y vista en lista, con zoom y recorrido con el teclado.
@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
-for script in ("diagrama_interactivo.py", "presentar.py", "backend_presentacion.py"):
+for script in ("diagrama_interactivo.py", "backend_presentacion.py"):
     subprocess.run([sys.executable, str(AQUI / script)], check=True)
 
 HTML = """<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -40,16 +40,16 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padd
 <button class="op" id="bd" aria-pressed="false"><span class="ico">◇</span><span class="t"><b>Diagramas</b><small>Con zoom; recorré clases, estados y lista</small></span></button>
 <span class="sp"></span>
 <div class="ayuda"><kbd>P</kbd> presentación · <kbd>D</kbd> diagramas · <kbd>M</kbd> menú<br>En la presentación: <kbd>Espacio</kbd> avanza, <kbd>Esc</kbd> vuelve a la lista, <kbd>D</kbd> abre el diagrama de la clase, <kbd>F</kbd> pantalla completa</div></nav>
-<main><iframe id="fb" src="backend_presentacion.html" title="Presentación" allow="fullscreen" allowfullscreen></iframe><iframe id="fd" src="diagrama.html" title="Diagramas" allow="fullscreen" allowfullscreen hidden></iframe><iframe id="fp" src="presentar.html" title="Cómo se llegó a este diseño" allow="fullscreen" allowfullscreen hidden></iframe></main>
+<main><iframe id="fb" src="backend_presentacion.html" title="Presentación" allow="fullscreen" allowfullscreen></iframe><iframe id="fd" src="diagrama.html" title="Diagramas" allow="fullscreen" allowfullscreen hidden></iframe></main>
 <script>
-const fb=document.getElementById('fb'),fd=document.getElementById('fd'),fp=document.getElementById('fp'),bp=document.getElementById('bp'),bd=document.getElementById('bd'),nav=document.querySelector('nav'),velo=document.getElementById('velo'),hb=document.getElementById('hb');
+const fb=document.getElementById('fb'),fd=document.getElementById('fd'),bp=document.getElementById('bp'),bd=document.getElementById('bd'),nav=document.querySelector('nav'),velo=document.getElementById('velo'),hb=document.getElementById('hb');
 function menu(v){const o=v===undefined?!nav.classList.contains('abierto'):v;nav.classList.toggle('abierto',o);velo.classList.toggle('on',o);hb.setAttribute('aria-expanded',o);hb.setAttribute('aria-label',o?'Cerrar el menú':'Abrir el menú')}
 function modo(m,clase){
  if(m==='codigo')m='presentacion';
- const d=m==='diagrama',pr=m==='proceso';
- fb.hidden=d||pr;fd.hidden=!d;fp.hidden=!pr;
+ const d=m==='diagrama';
+ fb.hidden=d;fd.hidden=!d;
  bp.setAttribute('aria-pressed',!d);bd.setAttribute('aria-pressed',d);menu(false);
- const f=d?fd:pr?fp:fb;
+ const f=d?fd:fb;
  setTimeout(()=>{f.focus();f.contentWindow&&f.contentWindow.focus();if(d&&clase)f.contentWindow.postMessage({irAClase:clase},'*')},60)}
 bp.onclick=()=>modo('presentacion');bd.onclick=()=>modo('diagrama');hb.onclick=()=>menu();velo.onclick=()=>menu(false);
 addEventListener('message',e=>{const m=e.data||{};if(m.tema)document.body.classList.toggle('claro',m.tema==='claro');else if(m.modo)modo(m.modo,m.clase);else if(m.menu)menu()});

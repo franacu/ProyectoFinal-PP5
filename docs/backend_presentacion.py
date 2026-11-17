@@ -19,6 +19,7 @@ AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 import backend_general as bg  # noqa: E402
 import backend_meta as bm  # noqa: E402
+import conformacion as cf  # noqa: E402
 import guion_archivos as ga  # noqa: E402
 
 RAIZ = AQUI.parent
@@ -250,6 +251,15 @@ def construir():
                          eyebrow=f"{g + 1:02d} · dominio/{archivo} · líneas {d['rango'][0]}–{d['rango'][1]}")
                 idx.append(agregar(s, g + 1))
         grupos.append(dict(titulo=gr["titulo"], desc=gr["desc"], archivos=gr["archivos"], slides=idx, entradas=entradas))
+
+    # conformación del diagrama: va al final de la lista de grupos, pero el menú la muestra primero
+    g = len(grupos)
+    idx = []
+    for s in cf.slides():
+        s["k"], s["archivo"] = "conf", None
+        idx.append(agregar(s, g))
+    grupos.append(dict(titulo="Conformación del diagrama", desc="Del enunciado a cada clase, y de las clases a sus relaciones, "
+                       "hasta el diagrama completo.", archivos=[], slides=idx, entradas={}))
     return slides, grupos
 
 
@@ -264,10 +274,12 @@ ICONOS = {   # íconos de línea, 24×24, dibujados con el color del texto
     4: '<path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
     5: '<circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 19"/>',
     6: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
+    8: '<rect x="3" y="3" width="7" height="6" rx="1"/><rect x="14" y="3" width="7" height="6" rx="1"/>'
+       '<rect x="8.5" y="15" width="7" height="6" rx="1"/><path d="M6.5 9v3h11V9M12 12v3"/>',
     7: '<path d="M7 18v-5a5 5 0 0 1 10 0v5"/><path d="M5 18h14v3H5z"/><path d="M12 3v2M4.5 6l1.4 1.4M19.5 6l-1.4 1.4"/>',
 }
 # columnas del menú: los grupos en el orden en que se construyó el código, de izquierda a derecha
-COLUMNAS = [("Fundamentos", [1, 2]), ("Avisos y recursos", [3, 4, 5]), ("Coordinación", [6, 7])]
+COLUMNAS = [("Fundamentos", [8, 1, 2]), ("Avisos y recursos", [3, 4, 5]), ("Coordinación", [6, 7])]
 
 FUENTES_MENU = [(400, "montserrat-latin-400-normal"), (500, "montserrat-latin-500-normal"),
                 (600, "montserrat-latin-600-normal"), (700, "montserrat-latin-700-normal")]
@@ -283,19 +295,17 @@ def fuentes_menu():
 
 
 def menu_html(slides, grupos):
-    """La vista de inicio: tres columnas de grupos y, debajo, el recorrido general y el proceso."""
+    """La vista de inicio: tres columnas de grupos y, debajo, el recorrido general."""
     def item(g):
         gr = grupos[g]
         archivos = "".join(f'<button class="fch" data-g="{g}" data-f="{esc(a)}">{esc(a)}</button>' for a in gr["archivos"])
         return (f'<div class="gr" data-g="{g}" tabindex="0" role="button" title="{len(gr["slides"])} diapositivas">'
                 f'<svg viewBox="0 0 24 24" aria-hidden="true">{ICONOS[g]}</svg>'
-                f'<div><b><span class="nro">{g}</span>{esc(gr["titulo"])}</b>'
+                f'<div><b><span class="nro">{0 if g == 8 else g}</span>{esc(gr["titulo"])}</b>'
                 f'<span class="desc">{esc(gr["desc"])}</span><span class="arch">{archivos}</span></div></div>')
     columnas = "".join(f'<div class="col"><h3>{esc(t)}</h3>{"".join(item(g) for g in gs)}</div>' for t, gs in COLUMNAS)
     play = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5-12-7.5Z"/></svg>'
-    pasos = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h5v-5h5V8h6"/><path d="M17 5l3 3-3 3"/></svg>'
-    extra = ('<p class="extra"><button class="preg" data-s="{}">{}Recorrido general</button>'
-             '<button class="preg" id="proceso">{}Cómo se llegó a este diseño</button></p>').format(grupos[0]["slides"][0], play, pasos)
+    extra = '<p class="extra"><button class="preg" data-s="{}">{}Recorrido general</button></p>'.format(grupos[0]["slides"][0], play)
     return f'<div class="mega">{columnas}</div>{extra}'
 
 
@@ -332,7 +342,7 @@ def pagina(slides, grupos):
     grupos_js = [dict(titulo=gr["titulo"], archivos=gr["archivos"], slides=gr["slides"], entradas=gr["entradas"]) for gr in grupos]
     pagina_html = PLANTILLA
     for clave, valor in (("%%SECCIONES%%", "\n".join(secciones)), ("%%MENU%%", menu_html(slides, grupos)),
-                         ("%%FUENTES_MENU%%", fuentes_menu()), ("%%META%%", json.dumps(meta, ensure_ascii=False)),
+                         ("%%FUENTES_MENU%%", fuentes_menu()), ("%%CONF_CSS%%", cf.CSS), ("%%META%%", json.dumps(meta, ensure_ascii=False)),
                          ("%%GRUPOS%%", json.dumps(grupos_js, ensure_ascii=False)), ("%%TOTAL%%", str(total))):
         pagina_html = pagina_html.replace(clave, valor)
     return pagina_html
@@ -500,6 +510,7 @@ button:hover{border-color:var(--accent)}button:disabled{opacity:.4;cursor:defaul
 @media (max-height:720px){h2{font-size:clamp(22px,2.6vw,30px);margin-bottom:8px}.eyebrow{margin-bottom:4px;font-size:12px}.cont li{padding:4px 0}.sigue{margin-bottom:6px}.sigue .paso{padding:2px 10px 2px 3px}.lead.corto{margin-bottom:6px}}
 @media (max-height:720px){.gr .desc{display:none}.gr{padding:10px 16px}}
 %%FUENTES_MENU%%
+%%CONF_CSS%%
 /* ── vista de inicio (menú): mismos colores que las diapositivas, Montserrat, columnas por tema ── */
 body.modo-lista .top,body.modo-lista .bottom{font-family:"Montserrat",sans-serif;letter-spacing:0}
 body.modo-lista .top span:first-child{color:var(--text);font-weight:600;letter-spacing:.12em}
@@ -661,7 +672,6 @@ document.querySelectorAll('.gr').forEach(c=>{
  c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();entrar(+c.dataset.g)}});
 });
 document.querySelectorAll('.ver[data-c]').forEach(b=>{if(emb){b.hidden=false;b.onclick=e=>{e.stopPropagation();parent.postMessage({modo:'diagrama',clase:b.dataset.c},'*')}}});
-$('#proceso').onclick=()=>{if(emb)parent.postMessage({modo:'proceso'},'*');else location.href='presentar.html'};
 addEventListener('resize',()=>{if(i<0)return;if(META[i].k==='codigo')ajustarCodigo();else ajustarSlide()});
 mostrarLista();
 </script></body></html>
