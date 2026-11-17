@@ -30,9 +30,11 @@ def esc(t):
 
 
 def md(t):
-    t = esc(t)
-    t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
-    return re.sub(r"`(.+?)`", r"<code>\1</code>", t)
+    """**negrita** y `código`. El código se aparta primero: un `**detalle` no se toma como negrita."""
+    codigos = []
+    t = re.sub(r"`(.+?)`", lambda m: codigos.append(m.group(1)) or f"\x00{len(codigos) - 1}\x00", t)
+    t = re.sub(r"\*\*(.+?)\*\*", lambda m: f"<strong>{m.group(1)}</strong>", esc(t))
+    return re.sub(r"\x00(\d+)\x00", lambda m: f"<code>{esc(codigos[int(m.group(1))])}</code>", t)
 
 
 def bloques(t):
@@ -40,7 +42,17 @@ def bloques(t):
     listas con «- » y pasos numerados con «1. »."""
     salida = []
     for parrafo in t.strip().split("\n\n"):
+        if parrafo.strip().startswith("```"):   # dibujo o código: se respeta tal cual
+            cuerpo = parrafo.strip().strip("`").strip("\n")
+            salida.append(f'<pre class="mini">{esc(cuerpo)}</pre>')
+            continue
         lineas = [l.strip() for l in parrafo.strip().split("\n") if l.strip()]
+        if all(l.startswith("|") for l in lineas):   # tabla: | a | b |, la 2.ª fila separa el encabezado
+            filas = [[c.strip() for c in l.strip("|").split("|")] for l in lineas if not set(l) <= set("|-: ")]
+            cab, *resto = filas
+            salida.append('<table class="mini"><thead><tr>' + "".join(f"<th>{md(c)}</th>" for c in cab) + "</tr></thead><tbody>"
+                          + "".join("<tr>" + "".join(f"<td>{md(c)}</td>" for c in f) + "</tr>" for f in resto) + "</tbody></table>")
+            continue
         if all(l.startswith("- ") for l in lineas):
             salida.append("<ul>" + "".join(f"<li>{md(l[2:])}</li>" for l in lineas) + "</ul>")
         elif all(re.match(r"\d+\. ", l) for l in lineas):
@@ -411,6 +423,8 @@ pre.mini{margin:6px 0 0;background:var(--code);border:1px solid #26334b;border-r
 .nota h3{font-size:clamp(17px,1.6vw,22px);margin:0 0 8px;letter-spacing:-.01em}
 .nota .q2{font-size:clamp(14.5px,1.3vw,17.5px);line-height:1.55;color:var(--soft);margin:0 0 8px}.nota .q2 strong{color:var(--text)}
 .nota .q2 p{margin:0 0 .55em}.nota .q2 p:last-child{margin-bottom:0}
+.nota .q2 pre.mini{font:600 .78em/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:8px;padding:.6em .8em;margin:.2em 0 .7em;white-space:pre;overflow-x:auto}
+.nota .q2 table.mini{border-collapse:collapse;width:100%;font-size:.8em;margin:.2em 0 .6em}.nota .q2 table.mini th,.nota .q2 table.mini td{border:1px solid var(--line);padding:.3em .45em;text-align:left;vertical-align:top}.nota .q2 table.mini th{color:var(--gold);font-weight:700;background:rgba(255,255,255,.03)}
 .nota .q2 ul,.nota .q2 ol{margin:.2em 0 .55em;padding-left:1.25em}.nota .q2 li{margin:.25em 0}.nota .q2 li::marker{color:var(--accent);font-weight:700}
 .nota h4{margin:10px 0 4px;font-size:13px;color:var(--gold);font-weight:700}
 .nota .tags{margin-top:8px}.nota .pista{color:var(--muted);font-size:12.5px;margin:10px 0 0}

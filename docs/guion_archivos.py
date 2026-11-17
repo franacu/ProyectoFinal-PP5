@@ -242,15 +242,56 @@ P += [
  paso("his_registro", 1, "historial.py: Operacion y Registro", HIS, R(HIS, "from __future__", "return dict(self.detalle).get(clave)"),
       "§9: cada cambio deja constancia de quién hizo qué, cuándo y sobre qué recursos.",
       n("class Operacion(Enum)", "Operacion: qué se puede registrar",
-        "Otra lista cerrada: aviso aceptado, misión asignada, unidad registrada… Cada cambio del sistema deja una de estas operaciones."),
+        "Otra lista cerrada, como los catálogos: enumera **todo lo que puede quedar registrado** en el historial, agrupado por tema (avisos, emergencias, misiones y recursos). "
+        "Nadie usa una operación a mano: cada método del dominio deja la suya **en el momento en que ocurre el cambio**.\n\n"
+        "**Simulación: AVISO_REGISTRADO.** Un reportante registra un aviso de inundación:\n\n"
+        "```\n"
+        "aviso = Aviso('rep-1', Ubicacion('Ruta 3 km 12', 'Río Grande'),\n"
+        "              TipoSituacion.INUNDACION, Gravedad.ALTA,\n"
+        "              'Agua ingresando a viviendas', 20/11 10:00)\n"
+        "```\n\n"
+        "El constructor del aviso deja, solo, su primer registro:\n\n"
+        "| quién | cuándo | qué | sobre qué | detalle |\n"
+        "|---|---|---|---|---|\n"
+        "| rep-1 | 10:00 | AVISO_REGISTRADO | av-1 | tipo: inundacion · gravedad: alta |\n\n"
+        "Si después el reportante agrega una nota y un operador lo descarta, el historial crece:\n\n"
+        "```\n"
+        "10:00  rep-1  AVISO_REGISTRADO   av-1   tipo=inundacion, gravedad=alta\n"
+        "10:15  rep-1  NOTA_AGREGADA      av-1\n"
+        "10:30  op-1   AVISO_DESCARTADO   av-1   justificacion=Aviso duplicado\n"
+        "```",
+        "§9: el historial dice siempre qué pasó con un nombre del catálogo, nunca con un texto libre que cada uno escribe distinto."),
       n("@dataclass(frozen=True, slots=True)", "Registro: quién, cuándo y qué",
         "Un registro es inmutable, igual que Ubicacion. `tuple[str, ...]` es una tupla de textos de cualquier largo; `detalle` guarda pares (clave, texto) y su `= ()` es el valor por defecto: tupla vacía."),
       n("def __post_init__", "Validar el registro",
-        "Exige actor, fecha, operación del catálogo y al menos un recurso afectado. En f\"...{x!r}\" las llaves insertan un valor dentro del texto y !r lo muestra tal cual, con comillas."),
+        "Igual que en Ubicacion, `__post_init__` valida apenas se crea el registro. Exige cuatro cosas:\n\n"
+        "1. un **actor** (quién),\n"
+        "2. una **fecha y hora** (cuándo),\n"
+        "3. una **operación** del catálogo (qué),\n"
+        "4. al menos un **recurso afectado** (sobre qué).\n\n"
+        "Si falta cualquiera, lanza RegistroInvalido.",
+        "No puede existir una constancia incompleta en el historial."),
       n("def de(cls", "Registro.de(): un atajo para crear registros",
-        "*recursos junta todos los ids sueltos en una tupla y **detalle junta los datos con nombre (unidad='u1') en un diccionario; se guardan como pares (clave, texto)."),
+        "Es un `@classmethod` que arma un Registro a partir de datos sueltos. Recibe:\n\n"
+        "- `actor_id`: quién hizo la operación,\n"
+        "- `fecha_hora`: cuándo,\n"
+        "- `operacion`: qué operación del catálogo,\n"
+        "- `*recursos`: los ids afectados, **todos los que hagan falta**,\n"
+        "- `**detalle`: datos extra **con nombre**, también los que hagan falta.\n\n"
+        "**Caso real**, una reasignación en emergencia.py:\n\n"
+        "`Registro.de('op-1', fecha, Operacion.MISION_REASIGNADA, 'em-1', 'mi-3', unidad_anterior='U1', unidad_nueva='U2')`\n\n"
+        "1. `*recursos` junta los ids sueltos en una tupla: ('em-1', 'mi-3').\n"
+        "2. `**detalle` junta los datos con nombre en un diccionario: {unidad_anterior: 'U1', unidad_nueva: 'U2'}.\n\n"
+        "Por último, el detalle se guarda como **pares (clave, texto)**: (('unidad_anterior', 'U1'), ('unidad_nueva', 'U2')).",
+        "Quien registra una operación escribe una sola línea legible, y el Registro queda inmutable igual."),
       n("def dato", "dato(): leer un valor del detalle",
-        "dict(self.detalle) vuelve a armar el diccionario y .get(clave) devuelve el valor, o None si esa clave no está.")),
+        "Responde: «¿qué valor tiene esta clave en el detalle del registro?».\n\n"
+        "1. **La firma:** `dato(self, clave: str) -> str | None` recibe el nombre de una clave y devuelve su texto, o **None** si esa clave no está.\n"
+        "2. **El return:** `dict(self.detalle)` vuelve a armar el diccionario a partir de los pares guardados y `.get(clave)` busca el valor; si no lo encuentra, devuelve None en lugar de lanzar un error.\n\n"
+        "**Ejemplo**, con el registro de la reasignación:\n\n"
+        "- `registro.dato('unidad_anterior')` → 'U1'\n"
+        "- `registro.dato('justificacion')` → None",
+        "PV17: se consulta qué unidades intervinieron en una reasignación sin recorrer el detalle a mano.")),
 ]
 
 # ═════════ 3 · EL AVISO ═════════
@@ -268,7 +309,21 @@ P += [
       n("class _Estado(ABC)", "_Estado: las preguntas que todo estado responde",
         "ABC marca una clase abstracta: no se puede crear sola. @abstractmethod obliga a cada subclase a implementar el método. El guion bajo inicial (_Estado) avisa que es interno del módulo."),
       n("class _Pendiente", "Pendiente, Aceptado y Descartado",
-        "Las tres responden las mismas cuatro preguntas. Pendiente devuelve el estado siguiente; las otras dos lanzan AvisoNoPendiente. validar_descarte comprueba que el descarte tenga sentido para el estado."),
+        "Las tres clases responden las **mismas cuatro preguntas** que define _Estado, pero cada una contesta distinto:\n\n"
+        "- **Pendiente**: el único que admite operaciones. Deja agregar notas, y descartar o aceptar le devuelve el estado siguiente.\n"
+        "- **Aceptado**: final. Rechaza todo con AvisoNoPendiente.\n"
+        "- **Descartado**: final. También rechaza todo con AvisoNoPendiente.\n\n"
+        "```\n"
+        "              ┌── descartar() ──▶ DESCARTADO  ✕ notas ✕ evaluar\n"
+        "PENDIENTE ────┤\n"
+        "  ✓ notas     └── aceptar() ───▶ ACEPTADO    ✕ notas ✕ evaluar\n"
+        "```\n\n"
+        "| | permitir_nota() | descartar() | aceptar() | validar_descarte() |\n"
+        "|---|---|---|---|---|\n"
+        "| **Pendiente** | ✓ no hace nada | → Descartado | → Aceptado | sin descarte |\n"
+        "| **Aceptado** | ✕ error | ✕ error | ✕ error | sin descarte |\n"
+        "| **Descartado** | ✕ error | ✕ error | ✕ error | con descarte |",
+        "El aviso nunca pregunta «¿en qué estado estoy?» con un if: le delega la pregunta a su estado, y cada estado ya sabe qué contestar. validar_descarte comprueba que un aviso descartado tenga su descarte y los otros dos no."),
       n("_PENDIENTE, _ACEPTADO", "Una sola instancia de cada estado",
         "Los estados no guardan datos propios, así que alcanza con **un único objeto de cada uno**, que se reutiliza en todos los avisos.\n\n"
         "1. **Al cargar el módulo** se crean los tres objetos una sola vez (`_Pendiente()`, `_Aceptado()`, `_Descartado()`) y se guardan en variables privadas.\n"
