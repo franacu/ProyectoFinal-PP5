@@ -22,8 +22,7 @@ body{font:15px/1.4 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-s
 main{position:absolute;inset:0}iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
 iframe[hidden]{display:none}
 #hb{position:fixed;z-index:30;top:6px;left:10px;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--accent);font-size:21px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-#hb:hover{border-color:var(--accent)}
-body.claro #hb{background:#0B2246;border-color:rgba(255,255,255,.25);color:#fff;box-shadow:none}body.claro #hb:hover{border-color:#71D5C3}#hb:focus-visible,nav button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#hb:hover{border-color:var(--accent)}#hb:focus-visible,nav button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #velo{position:fixed;inset:0;z-index:15;background:rgba(5,8,18,.55);display:none}#velo.on{display:block}
 nav{position:fixed;z-index:20;top:0;bottom:0;left:0;width:min(290px,86vw);background:var(--panel);border-right:1px solid var(--line);color:var(--text);display:flex;flex-direction:column;padding:12px 14px 16px;gap:8px;transform:translateX(-102%);transition:transform .2s}
 nav.abierto{transform:none;box-shadow:8px 0 32px rgba(0,0,0,.5)}

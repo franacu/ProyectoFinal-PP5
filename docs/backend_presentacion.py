@@ -498,35 +498,33 @@ button:hover{border-color:var(--accent)}button:disabled{opacity:.4;cursor:defaul
 @media (max-height:720px){h2{font-size:clamp(22px,2.6vw,30px);margin-bottom:8px}.eyebrow{margin-bottom:4px;font-size:12px}.cont li{padding:4px 0}.sigue{margin-bottom:6px}.sigue .paso{padding:2px 10px 2px 3px}.lead.corto{margin-bottom:6px}}
 @media (max-height:720px){.gr .desc{display:none}.gr{padding:10px 16px}}
 %%FUENTES_MENU%%
-/* ── vista de inicio (menú): fondo azul, letras blancas, Montserrat, columnas por tema ── */
-body.modo-lista,body.modo-lista .deck{background:#0E2A52;color:#fff}
-body.modo-lista .top,body.modo-lista .bottom{background:#0B2246;border-color:rgba(255,255,255,.14);color:#AFC3E0;font-family:"Montserrat",sans-serif;letter-spacing:0}
-body.modo-lista .top span:first-child{color:#fff;font-weight:600;letter-spacing:.12em}
-body.modo-lista button:not(.fch):not(.preg){background:transparent;border-color:rgba(255,255,255,.18);color:#7F97BB}
-#lista{font-family:"Montserrat",system-ui,sans-serif;color:#fff;max-width:1320px}
-#lista h1{font:600 clamp(26px,2.4vw,34px)/1.15 "Montserrat",sans-serif;letter-spacing:-.015em;color:#fff;margin:clamp(6px,1.5vh,18px) 0 6px}
-#lista .lead{font:400 clamp(14px,1.05vw,16px)/1.5 "Montserrat",sans-serif;color:#AFC3E0;max-width:760px;margin:0 0 clamp(14px,2.4vh,26px)}
-.mega{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:2px solid rgba(255,255,255,.55);background:#123468}
+/* ── vista de inicio (menú): mismos colores que las diapositivas, Montserrat, columnas por tema ── */
+body.modo-lista .top,body.modo-lista .bottom{font-family:"Montserrat",sans-serif;letter-spacing:0}
+body.modo-lista .top span:first-child{color:var(--text);font-weight:600;letter-spacing:.12em}
+#lista{font-family:"Montserrat",system-ui,sans-serif;color:var(--text);max-width:1320px}
+#lista h1{font:600 clamp(26px,2.4vw,34px)/1.15 "Montserrat",sans-serif;letter-spacing:-.015em;color:var(--text);margin:clamp(6px,1.5vh,18px) 0 6px}
+#lista .lead{font:400 clamp(14px,1.05vw,16px)/1.5 "Montserrat",sans-serif;color:var(--muted);max-width:760px;margin:0 0 clamp(14px,2.4vh,26px)}
+.mega{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
 .mega .col{padding:clamp(18px,3.2vh,34px) clamp(12px,1.6vw,24px) clamp(14px,2.4vh,26px)}
-.mega .col+.col{border-left:1px solid rgba(255,255,255,.12)}
-.mega h3{font:600 15px/1.2 "Montserrat",sans-serif;color:#71D5C3;margin:0 0 clamp(8px,1.6vh,16px);padding-left:14px}
+.mega .col+.col{border-left:1px solid var(--line)}
+.mega h3{font:600 15px/1.2 "Montserrat",sans-serif;color:var(--accent);margin:0 0 clamp(8px,1.6vh,16px);padding-left:14px}
 #lista .gr{display:grid;grid-template-columns:24px minmax(0,1fr);gap:0 12px;align-items:start;background:none;border:0;border-radius:12px;
-  padding:clamp(10px,1.6vh,15px) 14px;margin-bottom:clamp(2px,.6vh,8px);cursor:pointer;color:#fff;box-shadow:none;position:relative}
-#lista .gr:hover,#lista .gr:focus-visible{background:rgba(255,255,255,.09);outline:none}
-#lista .gr:focus-visible{box-shadow:0 0 0 2px #71D5C3}
-#lista .gr svg{width:23px;height:23px;margin-top:1px;fill:none;stroke:#fff;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+  padding:clamp(10px,1.6vh,15px) 14px;margin-bottom:clamp(2px,.6vh,8px);cursor:pointer;color:var(--text);box-shadow:none;position:relative}
+#lista .gr:hover,#lista .gr:focus-visible{background:var(--panel2);outline:none}
+#lista .gr:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+#lista .gr svg{width:23px;height:23px;margin-top:1px;fill:none;stroke:var(--text);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
 #lista .gr>div{display:block}
-#lista .gr b{display:flex;align-items:baseline;gap:7px;font:600 clamp(15.5px,1.25vw,18px)/1.25 "Montserrat",sans-serif;margin:0 0 4px;color:#fff}
-#lista .gr .nro{color:#7F9CC6;font-weight:500}
-#lista .gr .desc{display:block;font:400 clamp(13px,1vw,15px)/1.45 "Montserrat",sans-serif;color:#BCCBE2;margin:0}
+#lista .gr b{display:flex;align-items:baseline;gap:7px;font:600 clamp(15.5px,1.25vw,18px)/1.25 "Montserrat",sans-serif;margin:0 0 4px;color:var(--text)}
+#lista .gr .nro{color:var(--muted);font-weight:500}
+#lista .gr .desc{display:block;font:400 clamp(13px,1vw,15px)/1.45 "Montserrat",sans-serif;color:var(--muted);margin:0}
 #lista .gr .arch{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
-#lista .fch{background:none;border:0;padding:0;font:500 12.5px/1.4 "Montserrat",sans-serif;color:#9FD3FF;cursor:pointer}
-#lista .fch:hover{text-decoration:underline;color:#fff}
-#lista .gr.visto::after{content:"Visto";position:static;grid-column:2;justify-self:start;margin-top:6px;font:600 11px/1 "Montserrat",sans-serif;color:#0E2A52;background:#71D5C3;border-radius:99px;padding:4px 8px}
+#lista .fch{background:none;border:0;padding:0;font:500 12.5px/1.4 "Montserrat",sans-serif;color:#bce9df;cursor:pointer}
+#lista .fch:hover{text-decoration:underline;color:var(--text)}
+#lista .gr.visto::after{content:"Visto";position:static;grid-column:2;justify-self:start;margin-top:6px;font:600 11px/1 "Montserrat",sans-serif;color:var(--bg);background:var(--accent);border-radius:99px;padding:4px 8px}
 .extra{display:flex;gap:28px;margin:clamp(10px,1.8vh,18px) 0 0}
-.preg{background:none;border:0;padding:4px 0;font:500 clamp(14px,1.05vw,15.5px)/1.3 "Montserrat",sans-serif;color:#AFC3E0;cursor:pointer;border-radius:0}
-.preg:hover{color:#fff;text-decoration:underline;border:0}
-.preg:focus-visible{outline:2px solid #71D5C3;outline-offset:2px}
+.preg{background:none;border:0;padding:4px 0;font:500 clamp(14px,1.05vw,15.5px)/1.3 "Montserrat",sans-serif;color:var(--muted);cursor:pointer;border-radius:0}
+.preg:hover{color:var(--text);text-decoration:underline;border:0}
+.preg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:1100px){.mega{grid-template-columns:repeat(2,minmax(0,1fr))}.mega .col+.col{border-left:0}}
 @media (max-width:640px){.mega{grid-template-columns:1fr}}
 @media (max-height:900px){#lista .gr .arch{display:none}}
