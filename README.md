@@ -28,15 +28,28 @@ git clone https://github.com/franacu/ProyectoFinal-PP5.git
 cd ProyectoFinal-PP5
 ```
 
-**3. Instalar y comprobar que el dominio funciona** (debe terminar con `204 passed`)
+**3. Instalar y comprobar que todo funciona** (debe terminar con `237 passed`)
 
 ```bash
 uv sync
 uv run pytest
 ```
 
-Sin uv: `python3 -m venv .venv && source .venv/bin/activate && pip install pytest && pytest`
-(en Windows, `.venv\Scripts\activate`).
+Los tests no necesitan MongoDB: la API se prueba con repositorios en memoria y los repositorios
+Mongo con `mongomock` (una base Mongo simulada).
+
+**3b. Levantar la API REST con MongoDB**
+
+```bash
+docker compose up -d db      # solo la base (Mongo 7) en localhost:27017
+uv run fastapi dev           # API en http://localhost:8000 · documentación en http://localhost:8000/docs
+```
+
+O todo en contenedores: `docker compose up -d --build`. Para probar los endpoints, abrir la carpeta
+`bruno/` con [Bruno](https://www.usebruno.com/) y elegir el entorno `local`
+(o por consola: `cd bruno && npx @usebruno/cli run --env local`).
+
+Mientras no esté la autenticación, el usuario se indica con el encabezado `X-Usuario`.
 
 **4. Generar la pantalla de presentación y diagramas**
 
@@ -106,9 +119,18 @@ tests/
   test_ejecucion.py                         # PV11–PV13, PV15, PV18
   test_emergencias.py                       # PV03–PV05, PV16–PV18
   test_diseno.py                            # el dominio no pregunta por clase, solo stdlib, sin hora del sistema
+  test_api_avisos.py, test_api_emergencias.py  # contrato HTTP y códigos de error
+  test_persistencia.py                      # esquemas versionados y repositorios Mongo
   escenarios.py                             # armado de datos de ejemplo
+avance-1.md                # documento entregado en el Avance 1
+app/                       # capa de aplicación (FastAPI + MongoDB); el dominio no la conoce
+  main.py                  # crear_aplicacion(): servicios, routers y manejo de errores
+  dependencies.py          # entrega a cada endpoint su servicio (Depends)
+  avisos/                  # router → service → repository; esquema_mongo (documento ⇄ Aviso, versionado)
+  emergencias/             # ídem para emergencias (consulta y prioridad)
+  internal/                # conexión Mongo, reloj, identidad, esquema común, errores → HTTP
+bruno/                     # colección de pedidos HTTP con sus verificaciones
 docs/
-  avance-1.md
   crce.py                  # genera crce.html: barra lateral con presentación y diagramas
   backend_presentacion.py  # la presentación: menú, recorrido general y un grupo por archivo
   conformacion.py          # sección «Conformación del diagrama»: del enunciado a las clases y sus relaciones

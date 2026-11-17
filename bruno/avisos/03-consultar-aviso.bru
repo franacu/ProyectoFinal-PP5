@@ -1,0 +1,17 @@
+meta {
+  name: Consultar aviso
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/avisos/{{avisoId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

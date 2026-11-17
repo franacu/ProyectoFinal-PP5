@@ -73,6 +73,7 @@ class _Cerrada(_Estado):
 
 
 _ABIERTA, _CERRADA = _Abierta(), _Cerrada()
+_ESTADO_POR_ETIQUETA = {e.etiqueta: e for e in (_ABIERTA, _CERRADA)}
 
 
 class Emergencia:
@@ -106,6 +107,37 @@ class Emergencia:
             Registro.de(operador_id, creada_en, Operacion.EMERGENCIA_CREADA, self._id, aviso_id,
                         tipo=tipo.value, gravedad=gravedad.name.lower())
         ]
+
+    @classmethod
+    def restaurar(
+        cls,
+        *,
+        emergencia_id: str,
+        aviso_id: str,
+        reportante_id: str,
+        ubicacion: Ubicacion,
+        tipo: TipoSituacion,
+        gravedad: Gravedad,
+        creada_en: datetime,
+        estado: EstadoEmergencia,
+        registros: tuple[Registro, ...],
+    ) -> Emergencia:
+        """Reconstruye una emergencia guardada. Recibe solo objetos del dominio.
+
+        Cómo se lee la base (versión del documento, nombres de campos) lo resuelve
+        el esquema de persistencia, no este método. Las misiones se incorporan a la
+        persistencia en la próxima etapa.
+        """
+        if estado not in _ESTADO_POR_ETIQUETA:
+            raise AceptacionInvalida(f"Estado desconocido: {estado!r}")
+        if not registros:
+            raise AceptacionInvalida("Una emergencia guardada siempre tiene su registro de creación")
+        operador_id = registros[0].actor_id  # quien la creó al aceptar el aviso
+        emergencia = cls(aviso_id, reportante_id, ubicacion, tipo, gravedad, creada_en,
+                         operador_id, emergencia_id)
+        emergencia._estado = _ESTADO_POR_ETIQUETA[estado]
+        emergencia._registros = list(registros)
+        return emergencia
 
     # ── Misiones: operador (§2.2) ──────────────────────────────
 

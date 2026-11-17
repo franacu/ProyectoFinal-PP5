@@ -1,0 +1,17 @@
+meta {
+  name: Emergencias abiertas por prioridad
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/emergencias
+  body: none
+  auth: none
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

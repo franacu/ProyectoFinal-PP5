@@ -196,7 +196,10 @@ class Aviso:
         descarte: Descarte | None = None,
         registros: tuple[Registro, ...] = (),
     ) -> Aviso:
-        """Reconstruye un aviso ya existente (lo usará el repositorio Mongo).
+        """Reconstruye un aviso guardado. Recibe solo objetos del dominio.
+
+        La lectura de la base (versión del documento, nombres de campos) la resuelve
+        el esquema de persistencia (app/avisos/esquema_mongo.py), no este método.
 
         También permite armar un aviso ACEPTADO sin implementar todavía
         la operación aceptar (escenario 9 del avance).
