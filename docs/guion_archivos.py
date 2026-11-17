@@ -564,47 +564,134 @@ P += [
  paso("dis_funcion", 4, "distribucion.py: existe_distribucion", DIS, R(DIS, "from collections.abc", "return False"),
       "§5.3 y §8.2: cada puesto de la misión lo ocupa una persona distinta.",
       n("from collections.abc import Sequence", "Sequence: cualquier lista o tupla",
-        "Se usa solo como tipo: dice que la función acepta una secuencia ordenada (lista o tupla) de puestos."),
+        "`Sequence` es un **tipo genérico** de la biblioteca estándar: significa «cualquier colección ordenada», ya sea lista o tupla.\n"
+        "\n"
+        "Se usa **solo para anotar** el parámetro `puestos`: la función acepta los puestos en cualquiera de las dos formas.",
+        "La misión puede pasar sus puestos como tupla sin que la función exija un tipo exacto."),
       n("if not puestos", "Caso base de la recursión",
-        "Una función recursiva se llama a sí misma. Sin puestos que cubrir ya está resuelto: devuelve True. Es el punto donde la recursión termina."),
+        "Una función **recursiva** se resuelve llamándose a sí misma con un problema más chico. Necesita un punto donde **dejar de llamarse**: el caso base.\n"
+        "\n"
+        "Acá el caso base es: **no quedan puestos por cubrir**. Si todos los puestos ya tienen a alguien, el reparto existe y devuelve **True**.",
+        "Sin caso base, la función se llamaría a sí misma para siempre."),
       n("primero, resto =", "Cortar la lista: slicing",
-        "puestos[0] es el primero y puestos[1:] es todo menos el primero. Dos asignaciones en una línea: primero, resto = a, b."),
+        "Separa el problema en dos partes:\n"
+        "\n"
+        "1. `puestos[0]`: el **primer** puesto, el que se intenta cubrir ahora,\n"
+        "2. `puestos[1:]`: **todos los demás**, que se resuelven en la próxima llamada.\n"
+        "\n"
+        "`primero, resto = a, b` asigna los dos valores en una sola línea.\n"
+        "\n"
+        "Ejemplo: con (conducción, rescate, rescate), `primero` es conducción y `resto` es (rescate, rescate).",
+        "En cada llamada queda un puesto menos: así se llega al caso base."),
       n("enumerate(personas)", "enumerate: el índice y el elemento",
-        "Recorre las personas dando, en cada vuelta, su posición (indice) y la persona."),
+        "`enumerate(personas)` recorre la lista entregando, en cada vuelta, **dos cosas**:\n"
+        "\n"
+        "1. `indice`: la **posición** de la persona (0, 1, 2…),\n"
+        "2. `persona`: la **persona** en sí.\n"
+        "\n"
+        "La posición se necesita en la línea siguiente, para sacar a esa persona del grupo.",
+        "Se prueba a cada persona, una por una, para el primer puesto."),
       n("personas[:indice] +", "Sacar a la persona elegida",
-        "personas[:indice] es lo que está antes de ella y personas[indice + 1:] lo que está después; sumadas, el grupo sin esa persona. Con ese grupo se resuelve el resto de los puestos."),
+        "Si la persona **tiene la competencia** del primer puesto, se la saca del grupo y se resuelven los puestos que quedan con los demás:\n"
+        "\n"
+        "- `personas[:indice]`: los que están **antes** de ella,\n"
+        "- `personas[indice + 1:]`: los que están **después**,\n"
+        "- sumados con `+`: el grupo **sin esa persona**.",
+        "Una persona que ya ocupó un puesto no puede volver a contarse: es la regla de «personas distintas» del §5.3."),
       n("return False", "Ninguna sirvió",
-        "Si ninguna persona logra cubrir el primer puesto y los demás, no hay forma de repartir: devuelve False. Es el «retroceso» de la búsqueda.")),
+        "Si ninguna persona logra cubrir el primer puesto **y** los que siguen, no hay reparto posible: devuelve **False**. Cuando una llamada devuelve False, la anterior **retrocede** y prueba con la siguiente persona.\n"
+        "\n"
+        "**Ejemplo real (PV07):** rescate con puestos conducción, rescate y rescate. Ana tiene conducción y rescate, Bruno conducción, Carla rescate.\n"
+        "\n"
+        "1. Prueba **Ana** de conductora → quedan Bruno y Carla para dos rescates: Carla cubre uno, Bruno no cubre el otro → **falla y retrocede**.\n"
+        "2. Prueba **Bruno** de conductor → quedan Ana y Carla: Ana rescata, Carla rescata → **True**.",
+        "Encuentra un reparto aunque el primer intento no sirva, sin asignar nominalmente cada puesto (§8.2).")),
  paso("uni_condicion", 4, "unidad.py: la condición de servicio", UNI, R(UNI, "class _Condicion", "_HABILITADA, _EN_MANTENIMIENTO"),
       "§8.4: una unidad puede estar habilitada, en mantenimiento o fuera de servicio.",
       n("class _Condicion", "_Condicion: otro State",
-        "Mismo patrón que el aviso: una base abstracta con la pregunta verificar_habilitada() y una clase por condición."),
+        "Mismo patrón que los estados del aviso. `_Condicion` es una **clase abstracta privada** (guion bajo inicial) con una sola pregunta abstracta:\n"
+        "\n"
+        "`verificar_habilitada()`: ¿puede esta unidad recibir misiones?\n"
+        "\n"
+        "Hay una subclase por cada condición del §8.4: habilitada, en mantenimiento y fuera de servicio.",
+        "La unidad no pregunta con un if en qué condición está: le delega la pregunta a su condición."),
       n("class _Habilitada", "Habilitada: acepta",
-        "No hace nada (pass), o sea que no lanza error: la unidad puede recibir misiones."),
+        "Responde con `pass`, es decir, **no hace nada**: no lanza error.\n"
+        "\n"
+        "Que no haya error significa que la unidad **puede recibir misiones**.",
+        "Es la condición con la que nace toda unidad."),
       n("class _EnMantenimiento", "En mantenimiento y fuera de servicio: rechazan",
-        "Lanzan UnidadNoHabilitada con el motivo: «está en mantenimiento» o «está fuera de servicio»."),
+        "Las dos responden lanzando **UnidadNoHabilitada**, cada una con su motivo:\n"
+        "\n"
+        "- en mantenimiento → «la unidad está en mantenimiento»,\n"
+        "- fuera de servicio → «la unidad está fuera de servicio».",
+        "§8.4: solo las unidades habilitadas pueden recibir asignaciones, y el operador ve el motivo exacto."),
       n("_HABILITADA, _EN_MANTENIMIENTO", "Tres objetos únicos",
-        "Como en el aviso: un objeto por condición, reutilizado.")),
+        "Igual que en el aviso: las condiciones no guardan datos propios, así que alcanza con **un único objeto de cada una**.\n"
+        "\n"
+        "1. **Al cargar el módulo** se crean las tres una sola vez: `_Habilitada()`, `_EnMantenimiento()` y `_FueraDeServicio()`.\n"
+        "2. Se guardan en variables **privadas** (`_HABILITADA`, etc.).\n"
+        "3. Cada unidad apunta a una de ellas; cambiar de condición es **apuntar a otro objeto**, no crear uno nuevo.",
+        "Se ahorra memoria y todas las unidades en mantenimiento se comportan exactamente igual.")),
  paso("uni_init", 4, "unidad.py: Unidad.__init__", UNI, R(UNI, "class Unidad:", "self._registros: list[Registro] = []"),
       "§5.2: una unidad agrupa jefe, personal, vehículo y equipamiento.",
       n("personal: tuple[Persona, ...] = ()", "Parámetros opcionales",
-        "personal y equipamiento tienen `= ()`: se pueden omitir y valen tupla vacía. Una unidad siempre tiene jefe y vehículo; el resto es opcional."),
+        "`personal` y `equipamiento` terminan en `= ()`: igual que la condición del vehículo, son **opcionales** y, si no se pasan, valen una **tupla vacía**.\n"
+        "\n"
+        "En cambio, `jefe` y `vehiculo` no tienen valor por defecto: son **obligatorios**.",
+        "Una unidad siempre tiene jefe y vehículo; el resto del personal y el equipo se pueden sumar después."),
       n("dotacion = (jefe, *personal)", "(jefe, *personal): desempaquetar",
-        "*personal abre la tupla dentro de otra: arma (jefe, p1, p2, …). La dotación incluye al jefe."),
+        "El `*` **abre** la tupla `personal` dentro de otra tupla:\n"
+        "\n"
+        "`(jefe, *personal)` → (jefe, p1, p2, …)\n"
+        "\n"
+        "Así se arma la **dotación completa**, con el jefe incluido.",
+        "§5.2: el jefe integra la dotación y aporta sus competencias, contado una sola vez."),
       n("len({p.id for p in dotacion})", "Detectar repetidos con un conjunto",
-        "{p.id for p in dotacion} arma un conjunto de ids, que no admite repetidos. Si tiene menos elementos que la dotación, alguien figuraba dos veces."),
+        "`{p.id for p in dotacion}` arma un **conjunto** con los ids. Un conjunto **no admite repetidos**, entonces:\n"
+        "\n"
+        "- si tiene la **misma cantidad** de elementos que la dotación → nadie se repite,\n"
+        "- si tiene **menos** → alguien figuraba dos veces → RecursoDuplicado.\n"
+        "\n"
+        "Lo mismo se hace con el equipamiento.",
+        "Una misma persona no puede ocupar dos lugares en la unidad."),
       n("self._personal: dict", "Diccionarios por id",
-        "{p.id: p for p in dotacion} arma un diccionario id → persona (comprensión de diccionario). Buscar por id es directo. Del jefe solo se guarda el id: está en el diccionario de personal."),
+        "`{p.id: p for p in dotacion}` arma un **diccionario** que va del id a la persona (una «comprensión de diccionario»).\n"
+        "\n"
+        "- Buscar a alguien por su id es **directo**, sin recorrer la lista.\n"
+        "- Del jefe se guarda **solo su id**: la persona ya está en el diccionario de personal.",
+        "Incorporar, retirar o consultar una persona o un equipo por id es una sola operación."),
       n("self._mision_id: str | None", "Condición y misión: dos cosas distintas",
-        "Estar habilitada no es lo mismo que estar comprometida (§8.4): se guardan por separado. `str | None` significa «un id o nada».")),
+        "La unidad guarda por separado dos datos que el §8.4 distingue:\n"
+        "\n"
+        "1. `_condicion`: si está **habilitada**, en mantenimiento o fuera de servicio,\n"
+        "2. `_mision_id`: si está **comprometida** con una misión. `str | None` significa «un id o nada».\n"
+        "\n"
+        "Una unidad puede estar habilitada y ocupada, o habilitada y libre.",
+        "Declarar mantenimiento no libera una misión, y terminar una misión no cambia la condición.")),
  paso("uni_lectura", 4, "unidad.py: lectura y consultas", UNI, R(UNI, "def personal(self)", "for e in self._equipamiento.values())", antes=1),
       "La unidad responde preguntas sin entregar sus colecciones.",
       n("def personal", "personal: toda la dotación",
-        "Devuelve una tupla con todas las personas, jefe incluido, contado una sola vez."),
+        "Devuelve una **tupla** con todas las personas, con el jefe incluido y contado **una sola vez**.\n"
+        "\n"
+        "Igual que las notas del aviso: es una copia que no se puede modificar desde afuera.",
+        "Es lo que recibe la misión para verificar si alcanzan las personas."),
       n("def tiene_persona", "Consultas por id",
-        "tiene_persona, usa_vehiculo y tiene_equipo responden sí o no. `id in diccionario` busca entre las claves."),
+        "Tres **consultas rápidas** que responden True o False:\n"
+        "\n"
+        "- `tiene_persona(id)`: ¿esta persona integra la unidad?\n"
+        "- `usa_vehiculo(id)`: ¿este es su vehículo?\n"
+        "- `tiene_equipo(id)`: ¿este equipo es de la unidad?\n"
+        "\n"
+        "`id in diccionario` busca entre las **claves** del diccionario.",
+        "La flota las usa para comprobar que ningún recurso esté en dos unidades."),
       n("any(e.categoria", "any(): ¿alguno cumple?",
-        "any(...) es verdadero si al menos un elemento cumple la condición. Acá: ¿hay un equipo de esa categoría y operativo?")),
+        "`any(...)` es lo opuesto de `all()`: es verdadero si **al menos un** elemento cumple la condición.\n"
+        "\n"
+        "Acá pregunta: «¿hay **algún** equipo de esta categoría **y** operativo?».\n"
+        "\n"
+        "Un equipo de la categoría pero fuera de servicio **no cuenta**.",
+        "PV09: con el único equipo de rescate roto, la respuesta es False y la asignación se rechaza.")),
  paso("uni_compromiso", 4, "unidad.py: comprometer, liberar y exigir_jefe", UNI, R(UNI, "def comprometer", "no es el jefe de la unidad"),
       "§8.2 y §8.3: la unidad verifica todo y recién entonces se reserva.",
       n("self._condicion.verificar_habilitada()", "comprometer(): las condiciones en orden",
@@ -620,9 +707,15 @@ P += [
         "Solo si pasan las seis, guarda el id de la misión y la unidad queda reservada.",
         "Si cualquier condición falla, el error dice el motivo y la unidad queda exactamente como estaba."),
       n("def liberar", "liberar(): solo la misión que reservó",
-        "Recupera la disponibilidad dejando _mision_id en None, pero solo si quien lo pide es la misión que la reservó."),
+        "Recupera la disponibilidad dejando `_mision_id` en **None**.\n"
+        "\n"
+        "Antes comprueba que quien pide liberar sea **la misma misión** que la reservó; si no, lanza UnidadComprometida.",
+        "Una misión no puede liberar por error una unidad que está trabajando para otra."),
       n("def exigir_jefe", "exigir_jefe(): solo el jefe",
-        "Compara el id de la persona con el del jefe y lanza NoEsJefeDeLaUnidad si no coincide. Lo usa la misión antes de iniciar o finalizar.")),
+        "Compara el id de quien intenta operar con el id del jefe de la unidad. Si no coinciden, lanza **NoEsJefeDeLaUnidad**.\n"
+        "\n"
+        "La misión lo llama antes de iniciar, rechazar, registrar novedades o finalizar.",
+        "§2.3 y PV12: un jefe solo opera sobre las misiones de su propia unidad.")),
  paso("uni_admin", 4, "unidad.py: administrar el personal, el vehículo y el equipo", UNI, R(UNI, "def incorporar_personal", "self._registros.append(registro)", antes=0)[0:1] + (R(UNI, "def cambiar_condicion_equipo", "self._registros.append(registro)")[1],),
       "§2.4: se agregan, quitan y cambian recursos, siempre con la misma secuencia.",
       n("def incorporar_personal", "La secuencia de todos los mutadores",
@@ -643,15 +736,30 @@ P += [
         "Después arma el registro y recién ahí `del diccionario[clave]` borra a la persona.",
         "Una unidad nunca queda sin jefe."),
       n("def cambiar_vehiculo", "Cambiar el vehículo y su condición",
-        "cambiar_vehiculo reemplaza el vehículo y deja el anterior en el detalle del registro. cambiar_condicion_vehiculo usa con_condicion, que valida antes de tocar."),
+        "Dos métodos que siguen la secuencia de los mutadores:\n"
+        "\n"
+        "- `cambiar_vehiculo`: reemplaza el vehículo y guarda en el registro cuál era el **anterior**.\n"
+        "- `cambiar_condicion_vehiculo`: igual que en Equipo, usa `con_condicion()` para crear una **copia** del vehículo con la nueva condición; la copia se valida antes de reemplazar al original.",
+        "El historial muestra qué vehículo tenía la unidad antes del cambio (§9)."),
       n("def incorporar_equipo", "Equipo: incorporar, retirar y cambiar condición",
-        "Mismos pasos que con el personal. El diccionario por id permite reemplazar un equipo por su copia con otra condición.")),
+        "Los mismos pasos que con el personal:\n"
+        "\n"
+        "- **incorporar**: rechaza un equipo que ya está (RecursoDuplicado),\n"
+        "- **retirar**: rechaza un equipo que no está (NoEncontrado),\n"
+        "- **cambiar condición**: crea la copia con `con_condicion()` y la guarda en el diccionario en lugar del original.",
+        "PV09: restablecer un equipo roto es reemplazarlo por su copia operativa.")),
  paso("uni_servicio", 4, "unidad.py: condición de servicio e internos", UNI, R(UNI, "def declarar_en_mantenimiento", "no se modifica"),
       "La unidad cambia su condición de servicio con los mismos cuidados.",
       n("def declarar_en_mantenimiento", "Tres métodos finos",
-        "declarar_en_mantenimiento, declarar_fuera_de_servicio y restablecer_servicio solo eligen el estado y delegan en _cambiar_condicion."),
+        "`declarar_en_mantenimiento`, `declarar_fuera_de_servicio` y `restablecer_servicio` tienen **una sola línea**:\n"
+        "\n"
+        "eligen el objeto de la condición nueva y le delegan todo al método privado `_cambiar_condicion`.",
+        "La lógica del cambio está escrita una sola vez, no repetida en tres lugares."),
       n("def registrar_alta", "registrar_alta(): el primer registro",
-        "La flota la llama al incorporar la unidad. Deja el registro «unidad registrada» con la base en el detalle."),
+        "Igual que el aviso nace con AVISO_REGISTRADO, la unidad deja **UNIDAD_REGISTRADA**, con la base en el detalle.\n"
+        "\n"
+        "Diferencia: no lo hace en su constructor, sino cuando **la flota la incorpora**.",
+        "Si la flota rechaza la unidad, no queda un alta registrada de una unidad que nunca entró."),
       n("def _cambiar_condicion", "_cambiar_condicion(): el cambio común",
         "Es un método **privado** (empieza con _) que comparten los tres métodos de condición. Hace tres pasos:\n"
         "\n"
@@ -660,7 +768,12 @@ P += [
         "3. recién después **cambia** la condición y guarda el registro.",
         "El historial muestra siempre de qué condición a qué condición pasó la unidad."),
       n("def _exigir_modificable", "_exigir_modificable(): comprometida no se toca",
-        "Si la unidad tiene una misión, lanza UnidadComprometida. Es la primera línea de todos los métodos que modifican (§8.4).")),
+        "Es un **método privado** (guion bajo inicial): solo lo usa la propia unidad.\n"
+        "\n"
+        "Si la unidad tiene una misión (`_mision_id` no es None), lanza **UnidadComprometida**.\n"
+        "\n"
+        "Es la **primera línea** de todos los métodos que modifican la unidad.",
+        "§8.4 y PV14: no se cambia el personal, el vehículo o el equipo de una unidad que está en una misión.")),
 ]
 
 # ═════════ 6 · LA MISIÓN ═════════
@@ -686,17 +799,37 @@ P += [
         "Si falta cualquiera, lanza ResultadoInvalido. La propiedad `satisfactorio` responde si el resultado fue satisfactorio.",
         "§2.3: el jefe declara si cumplió el objetivo y qué hizo. Una emergencia solo cierra si alguna misión fue satisfactoria."),
       n("class VistaMision", "VistaMision: una foto de solo lectura",
-        "Copia de los datos de la misión (id, tipo, estado, unidad, novedades, resultado) que sale de la emergencia. Con ella se mira la misión sin poder cambiarla.")),
+        "Un **valor inmutable** con los datos de la misión en un momento dado: id, tipo, objetivo, estado, unidad, novedades y resultado.\n"
+        "\n"
+        "Es lo que la emergencia entrega hacia afuera: se puede **mirar** la misión, pero no **operar** sobre ella.",
+        "Nadie puede llamar a `asignar()` o `finalizar()` salteando a la emergencia, que es la que valida y registra.")),
  paso("mis_estados", 5, "mision.py: los cinco estados", MIS, R(MIS, "class EstadoMision", "_FINALIZADA, _CANCELADA ="),
       "§8.1: no se admiten transiciones arbitrarias.",
       n("class EstadoMision", "EstadoMision: el nombre público",
-        "Pendiente, asignada, en ejecución, finalizada y cancelada. Es lo que se muestra y se guarda; el objeto estado queda privado."),
+        "Igual que EstadoAviso: un Enum con los cinco nombres del §8.1 (pendiente, asignada, en ejecución, finalizada y cancelada).\n"
+        "\n"
+        "Es lo que se **muestra y se guarda**. El objeto estado, que tiene el comportamiento, queda **privado**.",
+        "Afuera solo se ve el nombre, nunca el objeto que decide."),
       n("def _no_admite", "_no_admite(): el error de la base",
-        "Arma el error «una misión X no puede Y». Los métodos de abajo lo lanzan con `raise self._no_admite(...)`."),
+        "Es un **método privado** que arma el mensaje del error: «una misión **X** no puede **Y**».\n"
+        "\n"
+        "Ejemplo: «una misión cancelada no puede iniciarse».\n"
+        "\n"
+        "Los métodos de abajo lo usan con `raise self._no_admite(...)`.",
+        "Todos los rechazos de estado tienen el mismo formato y el nombre del estado actual."),
       n("def asignar(self) -> _Estado", "Todo se rechaza por defecto",
-        "La base rechaza cada operación (asignar, reasignar, rechazar, iniciar, novedad, finalizar, cancelar). Un estado concreto sobrescribe solo las que admite."),
+        "A diferencia del aviso, la base `_Estado` de la misión **no es solo abstracta**: ya responde las siete operaciones, y las responde **rechazando** (asignar, reasignar, rechazar, iniciar, novedad, finalizar, cancelar).\n"
+        "\n"
+        "Cada estado concreto **sobrescribe solo las que admite**.",
+        "Igual que «por defecto no sirve para nada» de los vehículos: lo que un estado no declara, queda prohibido."),
       n("def verificar_concluida", "Dos preguntas para la emergencia",
-        "verificar_concluida() lanza MisionSinConcluir si la misión sigue abierta; exito() dice si terminó bien. Por defecto: no concluida y no exitosa."),
+        "La base también responde dos preguntas que usa la emergencia al cerrar:\n"
+        "\n"
+        "1. `verificar_concluida()`: lanza **MisionSinConcluir** si la misión sigue activa,\n"
+        "2. `exito()`: dice si terminó bien.\n"
+        "\n"
+        "Por defecto: **no concluida** y **no exitosa**.",
+        "Solo Finalizada y Cancelada cambian estas respuestas."),
       n("class _Pendiente", "Pendiente y Asignada: sus salidas",
         "Cada método devuelve el **estado siguiente**:\n"
         "\n"
@@ -706,7 +839,13 @@ P += [
         "Lo que no aparece en la lista lo rechaza la base con MisionEnEstadoInvalido.",
         "§8.1: no hay transiciones arbitrarias; cada estado sabe a dónde puede ir."),
       n("class _EnEjecucion", "En ejecución: novedades y finalizar",
-        "Admite novedades (pass: acepta) y finalizar, que lleva a Finalizada. No se puede cancelar una misión ya en ejecución."),
+        "Sobrescribe solo dos operaciones:\n"
+        "\n"
+        "1. `permitir_novedad()`: `pass`, acepta novedades,\n"
+        "2. `finalizar()`: devuelve el estado **Finalizada**.\n"
+        "\n"
+        "Todo lo demás sigue rechazado: no se puede **cancelar, reasignar ni rechazar** una misión en ejecución.",
+        "§8.3 y PV13: una vez iniciada, la misión solo puede terminar."),
       n("class _Finalizada", "Finalizada y Cancelada: terminales",
         "No admiten ninguna operación: una misión finalizada o cancelada **no se reabre**.\n"
         "\n"
@@ -714,21 +853,48 @@ P += [
         "- Solo **Finalizada** con resultado satisfactorio cuenta como **éxito**.",
         "La emergencia puede cerrarse cuando todas sus misiones llegaron a uno de estos dos estados (§7.2)."),
       n("_PENDIENTE, _ASIGNADA", "Un objeto por estado",
-        "Igual que en el aviso: una instancia reutilizable de cada estado.")),
+        "Igual que en el aviso y en la unidad: los cinco estados no guardan datos, así que se crea **un único objeto de cada uno** al cargar el módulo y todas las misiones los comparten.\n"
+        "\n"
+        "Cambiar de estado es **apuntar a otro objeto**.",
+        "Todas las misiones en ejecución se comportan exactamente igual.")),
  paso("mis_asignacion", 5, "mision.py: la unidad asignada (Null Object)", MIS, R(MIS, "class _Asignacion", "_SIN_UNIDAD ="),
       "Una misión pendiente todavía no tiene unidad: igual debe poder responder.",
       n("class _Asignacion", "_Asignacion: lo que toda asignación sabe hacer",
-        "Base abstracta con dos operaciones: liberar y exigir_jefe. `...` es el cuerpo vacío de un método abstracto."),
+        "Una **clase abstracta privada** con dos operaciones:\n"
+        "\n"
+        "1. `liberar()`: soltar la unidad,\n"
+        "2. `exigir_jefe()`: comprobar que quien opera sea el jefe.\n"
+        "\n"
+        "`...` es el cuerpo vacío de un método abstracto: cada subclase lo completa.",
+        "La misión le habla siempre a «su asignación», tenga o no una unidad real."),
       n("class _SinUnidad", "_SinUnidad: no hace nada",
-        "Para una misión sin unidad: liberar no hace nada y exigir_jefe lanza NoEsJefeDeLaUnidad. Es el patrón Null Object: en lugar de None, un objeto que responde."),
+        "Representa a una misión **sin unidad**. Responde así:\n"
+        "\n"
+        "- `liberar()`: `pass`, no hay nada que liberar,\n"
+        "- `exigir_jefe()`: lanza NoEsJefeDeLaUnidad, porque no hay jefe.\n"
+        "\n"
+        "Es el patrón **Null Object**: en lugar de guardar None y preguntar `if unidad is None` en cada método, se usa un objeto que ya sabe responder.",
+        "El código de la misión no se llena de ifs para el caso «sin unidad»."),
       n("class _ConUnidad", "_ConUnidad: delega en la unidad real",
-        "Guarda la unidad y su id; liberar y exigir_jefe le pasan la operación a la unidad."),
+        "Guarda la unidad asignada y su id. Sus dos operaciones **le pasan el pedido a la unidad**:\n"
+        "\n"
+        "- `liberar()` → `unidad.liberar(...)`,\n"
+        "- `exigir_jefe()` → `unidad.exigir_jefe(...)`.",
+        "La misión no necesita saber si tiene unidad: le pregunta a su asignación y ella resuelve."),
       n("_SIN_UNIDAD =", "Un solo _SinUnidad",
-        "Como no guarda datos, se crea un único objeto compartido por todas las misiones sin unidad.")),
+        "Igual que los estados: `_SinUnidad` no guarda datos, así que se crea **un único objeto** (`_SIN_UNIDAD`) que comparten todas las misiones sin unidad.",
+        "Una misión vuelve a «sin unidad» apuntando a ese objeto, sin crear uno nuevo.")),
  paso("mis_base", 5, "mision.py: Mision, la clase abstracta", MIS, R(MIS, "class Mision(ABC)", "if situacion not in", antes=0)[0:1] + (R(MIS, "def _exigir_equipo", "Falta un")[1],),
       "§6: cada tipo de misión declara lo suyo y la clase base hace lo común.",
       n("tipo: TipoMision", "Atributos de clase declarados, sin valor",
-        "Estas tres líneas solo anotan que cada subclase debe definir su tipo, sus situaciones admitidas y sus puestos. Están en la clase y no en cada objeto."),
+        "Estas tres líneas **solo anotan** lo que cada tipo de misión tiene que definir:\n"
+        "\n"
+        "1. `tipo`: qué misión es,\n"
+        "2. `situaciones_admitidas`: en qué situaciones se permite (§6.4),\n"
+        "3. `puestos`: qué competencias necesita, un puesto por persona distinta.\n"
+        "\n"
+        "Son **atributos de clase**: se definen una vez en cada subclase y valen para todos sus objetos.",
+        "Los requisitos dependen del tipo de misión, no de cada misión en particular (§6.4)."),
       n("def __init__", "Mision.__init__: nace pendiente y sin unidad",
         "Al crear una misión:\n"
         "\n"
@@ -738,13 +904,26 @@ P += [
         "4. las **novedades** empiezan vacías y el **resultado** en None.",
         "Toda misión nace igual, sin importar su tipo: pendiente y sin unidad (§8.1)."),
       n("def verificar_vehiculo", "Dos métodos que cada tipo define",
-        "verificar_vehiculo (doble despacho: le pregunta al vehículo) y verificar_equipamiento son abstractos: cada subclase los implementa."),
+        "Dos **métodos abstractos**: Mision no los implementa, cada tipo está obligado a hacerlo.\n"
+        "\n"
+        "1. `verificar_vehiculo()`: le pregunta al vehículo si sirve (doble despacho),\n"
+        "2. `verificar_equipamiento()`: comprueba el equipo que exige ese tipo.",
+        "Si se agrega un tipo de misión y le falta alguno, Python no deja crearlo."),
       n("def verificar_personal", "verificar_personal(): personas distintas",
-        "Llama a existe_distribucion con los puestos de la misión y, si no hay forma de cubrirlos, lanza PersonalInsuficiente con la lista de competencias."),
+        "Llama a `existe_distribucion` con los **puestos** de la misión y el **personal** de la unidad.\n"
+        "\n"
+        "Si no hay forma de cubrirlos con personas distintas, lanza **PersonalInsuficiente** con la lista de competencias que se necesitaban.",
+        "PV07: el operador ve qué competencias faltaron."),
       n("def verificar_situacion", "verificar_situacion(): ¿sirve para esta emergencia?",
-        "Rechaza con MisionIncompatible si la situación no está en situaciones_admitidas (§6.4)."),
+        "Pregunta si la situación de la emergencia está en `situaciones_admitidas`. Si no está, lanza **MisionIncompatible**.\n"
+        "\n"
+        "Ejemplo: una evacuación solo admite inundación e incendio; para un accidente vial se rechaza.",
+        "§6.4 y PV05: la tabla de compatibilidad vive en cada tipo de misión."),
       n("def _exigir_equipo", "_exigir_equipo(): helper común",
-        "Pregunta a la unidad si tiene un equipo operativo de la categoría y, si no, lanza EquipamientoInsuficiente. Lo reutilizan Rescate y AsistenciaSanitaria.")),
+        "Es un **método privado** de ayuda (helper): le pregunta a la unidad si tiene un equipo **operativo** de la categoría pedida y, si no, lanza **EquipamientoInsuficiente**.\n"
+        "\n"
+        "Lo reutilizan Rescate (equipo de rescate) y AsistenciaSanitaria (equipo sanitario).",
+        "La misma comprobación está escrita una sola vez.")),
  paso("mis_operador", 5, "mision.py: asignar, reasignar y cancelar", MIS, (R(MIS, "def asignar(self, unidad", "def asignar(self, unidad")[0], R(MIS, "def cancelar(self) -> None", "self._estado = siguiente")[1]),
       "§2.2: lo que hace el operador sobre una misión.",
       n("siguiente = self._estado.asignar()", "asignar(): primero preguntar, después comprometer",
@@ -806,11 +985,22 @@ P += [
  paso("mis_lectura", 5, "mision.py: lo que la emergencia le pregunta", MIS, (R(MIS, "def es_exitosa", "def es_exitosa")[0] - 3, R(MIS, "tuple(self._novedades), self._resultado)", "tuple(self._novedades), self._resultado)")[1]),
       "La emergencia pregunta sin poder modificar.",
       n("def verificar_concluida", "verificar_concluida() y es_exitosa()",
-        "La misión le pasa la pregunta a su estado. La emergencia las usa para decidir si se puede cerrar."),
+        "La misión **no responde sola**: le pasa la pregunta a su estado.\n"
+        "\n"
+        "- `verificar_concluida()` → el estado decide si lanza MisionSinConcluir,\n"
+        "- `es_exitosa()` → el estado decide mirando el resultado.\n"
+        "\n"
+        "La emergencia las usa para saber si puede cerrarse.",
+        "La regla de cierre no depende de ifs sobre el estado: cada estado ya sabe contestar."),
       n("def estado", "Lectura: estado y unidad",
-        "estado devuelve solo la etiqueta pública; unidad_id sale de la asignación, sea real o _SinUnidad (None)."),
+        "Dos propiedades de solo lectura:\n"
+        "\n"
+        "- `estado`: devuelve solo la **etiqueta** pública, igual que en el aviso,\n"
+        "- `unidad_id`: sale de la asignación; con `_SinUnidad` vale **None**.",
+        "Se puede saber qué unidad tiene la misión sin tocar la asignación."),
       n("def vista", "vista(): la foto de solo lectura",
-        "Arma una VistaMision con los datos actuales y una tupla de novedades. Es lo que sale de la emergencia.")),
+        "Arma una **VistaMision** con los datos actuales. Las novedades salen como **tupla**, igual que las notas del aviso.",
+        "Es lo único que la emergencia entrega hacia afuera de sus misiones.")),
  paso("mis_tipos", 5, "mision.py: Evacuación, Rescate y Asistencia sanitaria", MIS, R(MIS, "class Evacuacion", "EQUIPO_SANITARIO)"),
       "§6.1 a §6.3: tres tipos de misión con requisitos distintos.",
       n("tipo = TipoMision.EVACUACION", "Cada tipo declara sus datos",
@@ -823,22 +1013,50 @@ P += [
         "Son iguales para todas las evacuaciones, por eso viven en la clase y no en cada objeto.",
         "§6.1 y §6.4: los requisitos dependen del tipo de misión."),
       n("super().__init__", "Evacuacion.__init__: un dato más",
-        "Valida la cantidad de personas y llama a super().__init__ para que la base valide el objetivo y cree el id."),
+        "La evacuación necesita un dato que las demás no: **cuántas personas** evacuar.\n"
+        "\n"
+        "1. valida que la cantidad sea un **entero positivo** → si no, MisionInvalida,\n"
+        "2. llama a `super().__init__()`: igual que en TransportePersonas, la base valida el objetivo y genera el id,\n"
+        "3. guarda la cantidad.",
+        "PV06: la capacidad del vehículo se compara contra esta cantidad."),
       n("vehiculo.verificar_evacuacion", "Doble despacho",
-        "La misión no compara categorías: le pregunta al vehículo. Cada categoría de vehículo responde lo suyo."),
+        "La misión **no compara categorías**: le pregunta al vehículo.\n"
+        "\n"
+        "- Evacuación → `vehiculo.verificar_evacuacion(cantidad)`,\n"
+        "- Rescate → `vehiculo.verificar_rescate()`,\n"
+        "- Asistencia → `vehiculo.verificar_asistencia()`.\n"
+        "\n"
+        "Se llama **doble despacho** porque la respuesta depende de **dos tipos**: el de la misión (qué pregunta hace) y el del vehículo (cómo contesta).",
+        "PV08: una ambulancia no sirve para evacuar sin escribir ningún if de categorías."),
       n("class Rescate", "Rescate: conductor y dos rescatistas",
-        "Puestos: conducción y dos de rescate. Pide un equipo de rescate operativo con _exigir_equipo."),
+        "Declara sus datos y sus dos verificaciones:\n"
+        "\n"
+        "1. `puestos`: conducción y **dos** de rescate, tres personas distintas,\n"
+        "2. `verificar_vehiculo()`: le pregunta al vehículo si sirve para rescatar,\n"
+        "3. `verificar_equipamiento()`: pide un **equipo de rescate** operativo con `_exigir_equipo`.",
+        "§6.2 y PV07: un rescate exige un mínimo de tres integrantes distintos."),
       n("class AsistenciaSanitaria", "Asistencia sanitaria: ambulancia y primeros auxilios",
-        "Puestos: conducción y primeros auxilios. Pide una ambulancia y un equipo sanitario operativo.")),
+        "Mismo molde que Rescate:\n"
+        "\n"
+        "1. `puestos`: conducción y primeros auxilios,\n"
+        "2. `verificar_vehiculo()`: solo una **ambulancia** responde que sí,\n"
+        "3. `verificar_equipamiento()`: pide un **equipo sanitario** operativo.",
+        "§6.3 y PV08: una unidad con transporte de personas se rechaza aunque tenga personal con primeros auxilios.")),
 ]
 
 # ═════════ 7 · LA EMERGENCIA Y LA FLOTA ═════════
 P += [
  paso("eme_estados", 6, "emergencia.py: abierta o cerrada", EME, R(EME, "class EstadoEmergencia", "_ABIERTA, _CERRADA"),
       "§7.2: una emergencia solo se cierra si todas sus misiones terminaron y alguna fue exitosa.",
-      n("class EstadoEmergencia", "EstadoEmergencia: el nombre público", "Abierta o cerrada: lo que se muestra y se guarda."),
+      n("class EstadoEmergencia", "EstadoEmergencia: el nombre público",
+        "Igual que en el aviso y la misión: un Enum con los dos estados, **abierta** y **cerrada**. Es lo que se muestra y se guarda.",
+        "El reportante puede consultar si su emergencia está abierta o cerrada (§2.1)."),
       n("def permitir_modificaciones", "_Estado: dos preguntas",
-        "permitir_modificaciones() lanza EmergenciaCerrada si ya no se puede operar; cerrar() recibe las misiones y devuelve el estado siguiente. Mismo patrón abstracto que los otros State."),
+        "Clase abstracta **privada**, igual que la del aviso, con dos métodos abstractos:\n"
+        "\n"
+        "1. `permitir_modificaciones()`: lanza EmergenciaCerrada si ya no se puede operar,\n"
+        "2. `cerrar(misiones)`: recibe las misiones y devuelve el estado siguiente, o lanza el motivo por el que no puede cerrarse.",
+        "Cada operación de la emergencia empieza preguntándole a su estado."),
       n("class _Abierta", "Abierta: permite todo y puede cerrarse",
         "Acepta modificaciones (`pass`). Para **cerrar** exige dos cosas:\n"
         "\n"
@@ -846,8 +1064,14 @@ P += [
         "2. **al menos una** exitosa: `any(...)` → si ninguna lo es (o no hay misiones), SinMisionExitosa.",
         "§7.2 y PV16: las dos condiciones del cierre, en el mismo lugar."),
       n("class _Cerrada", "Cerrada: rechaza todo",
-        "Cualquier modificación y un segundo cierre lanzan EmergenciaCerrada."),
-      n("_ABIERTA, _CERRADA", "Dos objetos únicos", "Una instancia de cada estado, reutilizada.")),
+        "Responde las dos preguntas con **EmergenciaCerrada**:\n"
+        "\n"
+        "- cualquier modificación → «no admite misiones ni modificaciones operativas»,\n"
+        "- un segundo cierre → «la emergencia ya está cerrada».",
+        "§7.2 y PV16: una emergencia cerrada no admite nuevas misiones."),
+      n("_ABIERTA, _CERRADA", "Dos objetos únicos",
+        "Igual que en el aviso: se crean **una sola vez** `_Abierta()` y `_Cerrada()`, y todas las emergencias los comparten.",
+        "Todas las emergencias cerradas se comportan exactamente igual.")),
  paso("eme_init", 6, "emergencia.py: Emergencia.__init__", EME, R(EME, "class Emergencia:", "        ]"),
       "§7.2: una emergencia nace al aceptar un aviso.",
       n("if not hay_texto(aviso_id)", "Validar el origen",
@@ -860,11 +1084,24 @@ P += [
         "Si falla cualquier grupo, lanza AceptacionInvalida.",
         "Una emergencia nace completa: sin ella el aviso tampoco cambia de estado."),
       n("self._estado: _Estado = _ABIERTA", "Nace abierta",
-        "Guarda sus datos privados y empieza en el estado Abierta."),
+        "Igual que el aviso: guarda sus datos en **atributos privados** y genera su id con `uuid4()` si no se le pasa uno.\n"
+        "\n"
+        "Su estado inicial es **_ABIERTA**: toda emergencia nace abierta.",
+        "§7.2: mientras esté abierta, el operador puede agregar misiones."),
       n("self._misiones: dict", "Las misiones por id",
-        "Un diccionario id → misión: la emergencia es la dueña de sus misiones."),
+        "`_misiones` es un **diccionario privado** id → misión, que empieza vacío.\n"
+        "\n"
+        "La emergencia es la **dueña** de sus misiones: toda operación sobre una misión pasa por ella.",
+        "Nadie opera una misión salteando las reglas de la emergencia (abierta, registro, compatibilidad)."),
       n("Operacion.EMERGENCIA_CREADA", "Nace con su primer registro",
-        "Una lista con un solo Registro: «emergencia creada» con el tipo y la gravedad confirmados.")),
+        "Igual que el aviso: `self._registros = [ ... ]` crea una lista con **un único elemento**, el registro de su creación. Ese registro guarda:\n"
+        "\n"
+        "- **quién**: el operador que aceptó el aviso,\n"
+        "- **cuándo**: el momento de la aceptación,\n"
+        "- **qué**: `Operacion.EMERGENCIA_CREADA`,\n"
+        "- **sobre qué**: la emergencia y el aviso de origen,\n"
+        "- **detalle**: el tipo y la gravedad **confirmados**.",
+        "§9: la creación de la emergencia queda registrada desde el primer momento.")),
  paso("eme_operador", 6, "emergencia.py: lo que hace el operador", EME, (R(EME, "def crear_mision", "def crear_mision")[0], R(EME, "def cancelar_mision", "self._registros.append(registro)")[1]),
       "§2.2: crear, asignar, reasignar y cancelar misiones.",
       n("def crear_mision", "crear_mision(): agregar una misión",
@@ -886,7 +1123,14 @@ P += [
         "El registro se guarda solo si la misión aceptó la unidad.",
         "§8.2: las siete verificaciones se reparten entre la emergencia, la misión y la unidad."),
       n("def reasignar_mision", "reasignar_mision(): quién era y quién es",
-        "Guarda la unidad anterior antes de reasignar y deja ambas en el detalle del registro. `str(anterior)` convierte a texto aunque sea None."),
+        "Tres pasos:\n"
+        "\n"
+        "1. guarda la unidad **anterior** antes de reasignar,\n"
+        "2. `mision.reasignar(unidad_nueva)` verifica todo,\n"
+        "3. registra **las dos** unidades en el detalle.\n"
+        "\n"
+        "`str(anterior)` convierte a texto aunque sea None.",
+        "§9 y PV17: una reasignación identifica la unidad anterior y la nueva."),
       n("def cancelar_mision", "cancelar_mision(): el registro antes de cancelar",
         "Cuatro pasos:\n"
         "\n"
@@ -906,9 +1150,15 @@ P += [
         "4. deja el **registro**.",
         "La emergencia no repite las reglas de la misión: solo coordina y deja constancia."),
       n("def registrar_novedad", "registrar_novedad(): la novedad queda en el detalle",
-        "`novedad=texto` pasa el texto como dato con nombre al detalle del registro."),
+        "Sigue el molde de las cuatro operaciones del jefe y, al registrar, pasa `novedad=texto`: el texto queda como **dato con nombre** en el detalle del registro.",
+        "PV11: el historial muestra qué informó el jefe durante la ejecución."),
       n("def finalizar_mision", "finalizar_mision(): resultado y tareas",
-        "Guarda la unidad antes de finalizar (después queda libre) y registra el resultado y las tareas.")),
+        "Tres pasos:\n"
+        "\n"
+        "1. guarda qué unidad tenía la misión, **antes** de finalizar (después queda libre),\n"
+        "2. `mision.finalizar(...)` valida el jefe y el resultado,\n"
+        "3. registra la unidad, el **resultado** y las **tareas**.",
+        "§9: la finalización deja constancia de qué unidad hizo qué y con qué resultado.")),
  paso("eme_cierre", 6, "emergencia.py: cerrar", EME, R(EME, "def cerrar(self, supervisor_id", "self._registros.append(registro)"),
       "§7.2: el supervisor cierra la emergencia.",
       n("self._estado.cerrar(", "cerrar(): el estado decide",
@@ -922,26 +1172,62 @@ P += [
  paso("eme_lectura", 6, "emergencia.py: lectura y prioridad", EME, (R(EME, "def id(self)", "def id(self)", antes=1)[0], R(EME, "return tuple(sorted(abiertas", "return tuple(sorted(abiertas")[1]),
       "§4: las emergencias abiertas se atienden de más grave a menos grave.",
       n("def misiones", "misiones: solo fotos de lectura",
-        "`tuple(m.vista() for m in ...)` es una expresión generadora: recorre las misiones y arma una tupla con la VistaMision de cada una. La emergencia nunca entrega la misión misma."),
+        "`tuple(m.vista() for m in ...)` es una **expresión generadora**: recorre las misiones y arma una tupla con la **VistaMision** de cada una.\n"
+        "\n"
+        "La emergencia **nunca entrega la misión misma**, solo su foto.",
+        "Nadie puede finalizar o cancelar una misión desde afuera sin pasar por la emergencia."),
       n("def clave_de_prioridad", "clave_de_prioridad: qué se ordena",
-        "Una tupla (-gravedad, creada_en): el signo menos pone la Alta primero y, a igual gravedad, gana la más antigua."),
+        "Devuelve una tupla **(-gravedad, creada_en)**. Python ordena las tuplas comparando primero el primer valor y, si empatan, el segundo.\n"
+        "\n"
+        "1. `-gravedad`: Alta vale 3, entonces su clave es **-3**, la más chica: va **primero**.\n"
+        "2. `creada_en`: a igual gravedad, gana la **más antigua**.\n"
+        "\n"
+        "| emergencia | gravedad | aceptada | clave |\n"
+        "|---|---|---|---|\n"
+        "| E2 | Alta | 10:30 | (-3, 10:30) |\n"
+        "| E1 | Media | 10:00 | (-2, 10:00) |\n"
+        "| E3 | Media | 10:15 | (-2, 10:15) |",
+        "§4 y PV03: Alta, Media y Baja; a igual gravedad, primero la aceptada antes."),
       n("def _mision", "_mision(): buscar o NoEncontrado",
-        "Función privada que busca por id y lanza NoEncontrado si no está."),
+        "Es un **método privado** de la emergencia: busca una misión por su id en el diccionario y, si no está, lanza **NoEncontrado**.\n"
+        "\n"
+        "Lo usan todas las operaciones sobre misiones.",
+        "Operar sobre una misión de otra emergencia se rechaza con un motivo claro."),
       n("def abiertas_por_prioridad", "abiertas_por_prioridad(): una función de módulo",
-        "(e for e in emergencias if ...) filtra solo las abiertas; sorted(..., key=lambda e: e.clave_de_prioridad) las ordena. `lambda e: ...` es una mini función sin nombre; devuelve una tupla.")),
+        "Es una **función** del módulo, fuera de la clase, porque trabaja con **muchas** emergencias. Hace dos pasos:\n"
+        "\n"
+        "1. **filtra**: `(e for e in emergencias if ...)` deja solo las abiertas,\n"
+        "2. **ordena**: `sorted(..., key=lambda e: e.clave_de_prioridad)` las ordena por su clave.\n"
+        "\n"
+        "`lambda e: ...` es una **mini función sin nombre**: le dice a sorted qué mirar de cada emergencia.",
+        "PV03: el operador ve primero lo más urgente.")),
  paso("flo_consulta", 6, "flota.py: BaseOperativa y Flota", FLO, R(FLO, "@dataclass", "if u.base_id == base_id"),
       "§5.1 y §5.2: la flota conoce todas las bases y unidades.",
       n("class BaseOperativa", "BaseOperativa: un valor",
-        "Mismo molde que Ubicacion: identificación, nombre y ubicación obligatorios."),
+        "Mismo molde que Ubicacion: un **valor inmutable** que exige tres cosas:\n"
+        "\n"
+        "1. una **identificación**,\n"
+        "2. un **nombre**,\n"
+        "3. una **ubicación**.\n"
+        "\n"
+        "Si falta cualquiera, lanza RecursoInvalido.",
+        "§5.1: cada base tiene identificación y ubicación."),
       n("class Flota", "Flota: dos diccionarios",
-        "Guarda bases y unidades por id. Es la raíz de consistencia: la regla de no repetir recursos involucra a todas las unidades."),
+        "Guarda en dos **diccionarios privados** las bases y las unidades, cada una por su id.\n"
+        "\n"
+        "Es la **raíz de consistencia** de los recursos: la regla «un recurso no puede estar en dos unidades» involucra a **todas** las unidades, y solo la flota las ve a todas.",
+        "§5.2: una unidad sola no puede saber si su vehículo ya está en otra."),
       n("def unidad(self", "unidad(): buscar o NoEncontrado",
-        "`if unidad_id not in diccionario` comprueba la clave antes de leer."),
+        "Igual que `_mision()` en la emergencia: `if unidad_id not in diccionario` comprueba que exista la clave **antes** de leerla y, si no está, lanza **NoEncontrado**.",
+        "Pedir una unidad inexistente da un error con nombre, no un KeyError de Python."),
       n("def unidades_de", "unidades_de(): filtrar con una expresión",
-        "`tuple(u for u in ... if condición)` devuelve solo las unidades de esa base.")),
+        "`tuple(u for u in ... if condición)` recorre las unidades y se queda solo con las de esa **base**.",
+        "§5.1: una base aloja varias unidades y cada unidad pertenece a una sola base.")),
  paso("flo_altas", 6, "flota.py: registrar bases e incorporar unidades", FLO, R(FLO, "def registrar_base", "self._unidades[unidad.id] = unidad"),
       "Dar de alta exige revisar a todas las demás.",
-      n("def registrar_base", "registrar_base(): sin duplicados", "Si ya existe una base con ese id, lanza RecursoDuplicado; si no, la guarda."),
+      n("def registrar_base", "registrar_base(): sin duplicados",
+        "Si ya existe una base con ese id, lanza **RecursoDuplicado**; si no, la guarda en el diccionario.",
+        "No hay dos bases con la misma identificación."),
       n("def incorporar_unidad", "incorporar_unidad(): revisar todo y después guardar",
         "Antes de guardar, la flota verifica:\n"
         "\n"
@@ -962,11 +1248,27 @@ P += [
         "2. comprueba que el recurso esté **libre en las demás** unidades,\n"
         "3. **delega** en la unidad, que valida lo suyo (no comprometida, no repetido).",
         "Cada uno controla lo que sabe: la flota ve todas las unidades, la unidad se ve a sí misma."),
-      n("def cambiar_vehiculo", "Vehículo y equipo: el mismo orden", "cambiar_vehiculo e incorporar_equipo hacen lo mismo con sus propios chequeos.")),
+      n("def cambiar_vehiculo", "Vehículo y equipo: el mismo orden",
+        "`cambiar_vehiculo` e `incorporar_equipo` repiten los tres pasos de `incorporar_personal`:\n"
+        "\n"
+        "1. buscar la unidad,\n"
+        "2. comprobar que el recurso esté **libre** en las demás,\n"
+        "3. delegar en la unidad.",
+        "§5.2: ningún vehículo ni equipo termina en dos unidades.")),
  paso("flo_unicidad", 6, "flota.py: unicidad entre unidades", FLO, R(FLO, "def _exigir_persona_libre", "El equipo {equipo_id}"),
       "§5.2: una persona, vehículo o equipo no puede estar en dos unidades.",
       n("def _exigir_persona_libre", "_exigir_persona_libre(): recorrer las unidades",
-        "Recorre todas las unidades menos la indicada (salvo_unidad_id, que puede ser None); si alguna ya tiene a la persona, lanza RecursoDuplicado con la unidad."),
+        "Es un **método privado** de la flota. Recorre **todas** las unidades y, si alguna ya tiene a la persona, lanza **RecursoDuplicado** indicando cuál.\n"
+        "\n"
+        "`salvo_unidad_id` indica qué unidad **no** revisar:\n"
+        "\n"
+        "- al **incorporar a una unidad existente**, se saltea esa misma unidad (la valida ella),\n"
+        "- al **dar de alta una unidad nueva**, vale None y se revisan todas.",
+        "§5.2: una misma persona no puede formar parte de dos unidades."),
       n("def _exigir_vehiculo_libre", "Lo mismo para vehículos y equipos",
-        "Cambia solo la pregunta: usa_vehiculo o tiene_equipo.")),
+        "`_exigir_vehiculo_libre` y `_exigir_equipo_libre` también son **métodos privados** y hacen lo mismo; solo cambia la pregunta que le hacen a cada unidad:\n"
+        "\n"
+        "- vehículos → `usa_vehiculo()`,\n"
+        "- equipos → `tiene_equipo()`.",
+        "Las tres reglas de unicidad del §5.2 viven en un solo lugar.")),
 ]
