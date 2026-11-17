@@ -201,15 +201,44 @@ def slides():
         hechos += nuevos
     total = len(d.RELACIONES) + sum(len(h) for h in d.HERENCIA.values())
     s.append(dict(eyebrow="conformación del diagrama · resultado", titulo="El diagrama de clases completo", clase="Emergencia",
-                  html=f'<div class="final"><div class="dgw completo">{_svg(compacto=False)}</div>'
+                  html=f'<div class="final"><div class="dgw completo"><div class="zoom" tabindex="0" '
+                       f'aria-label="Diagrama de clases. Rueda del mouse para acercar, arrastrá para moverte.">{_svg(compacto=False)}</div>'
+                       f'<div class="zctl"><button type="button" data-z="-" aria-label="Alejar">−</button>'
+                       f'<button type="button" data-z="+" aria-label="Acercar">+</button>'
+                       f'<button type="button" data-z="0">Ajustar</button><span>Rueda para acercar · arrastrá para moverte</span></div></div>'
                        f'<div class="card"><h3>Lo que quedó</h3><ul class="cifras">'
                        f'<li><b>{len(d.CLASES)}</b> clases, leídas del código</li>'
                        f'<li><b>{total}</b> relaciones: {len(d.RELACIONES)} entre clases y '
                        f'{sum(len(h) for h in d.HERENCIA.values())} de herencia</li>'
                        f'<li><b>{len(d.HERENCIA)}</b> jerarquías: Mision y Vehiculo</li></ul>'
-                       f'<div class="callout">Con la tecla <b>D</b> se abre este mismo diagrama con zoom, '
-                       f'y cada clase lleva a su código.</div></div></div>'))
+                       f'<div class="callout">Para ver el código de cada clase, los estados de la misión o la lista, '
+                       f'abrí <b>Diagramas</b> desde el menú ☰ (tecla <b>D</b>).</div></div></div>{ZOOM_JS}'))
     return s
+
+
+ZOOM_JS = r"""<script>
+/* zoom y desplazamiento del diagrama completo: rueda para acercar, arrastrar para moverse */
+document.querySelectorAll('.dgw.completo').forEach(caja=>{
+ const z=caja.querySelector('.zoom'),svg=z.querySelector('svg'),vb=svg.viewBox.baseVal;
+ svg.setAttribute('width',vb.width);svg.setAttribute('height',vb.height);
+ let s=1,x=0,y=0,movido=false;
+ const pintar=()=>{svg.style.transform=`translate(${x}px,${y}px) scale(${s})`};
+ const ajustar=()=>{const w=z.clientWidth,h=z.clientHeight;if(!w||!h)return;
+  s=Math.min(w/vb.width,h/vb.height)*.97;x=(w-vb.width*s)/2;y=(h-vb.height*s)/2;movido=false;pintar()};
+ const acercar=(f,cx,cy)=>{const n=Math.min(4,Math.max(.15,s*f));if(cx===undefined){cx=z.clientWidth/2;cy=z.clientHeight/2}
+  x=cx-(cx-x)*n/s;y=cy-(cy-y)*n/s;s=n;movido=true;pintar()};
+ new ResizeObserver(()=>{if(!movido)ajustar()}).observe(z);
+ z.addEventListener('wheel',e=>{e.preventDefault();const r=z.getBoundingClientRect();acercar(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+ let arr=null;
+ z.addEventListener('pointerdown',e=>{arr={px:e.clientX,py:e.clientY,x,y};z.setPointerCapture(e.pointerId);z.classList.add('arrastra')});
+ z.addEventListener('pointermove',e=>{if(!arr)return;x=arr.x+e.clientX-arr.px;y=arr.y+e.clientY-arr.py;movido=true;pintar()});
+ const soltar=()=>{arr=null;z.classList.remove('arrastra')};z.addEventListener('pointerup',soltar);z.addEventListener('pointercancel',soltar);
+ z.addEventListener('dblclick',ajustar);
+ z.addEventListener('click',e=>e.stopPropagation());
+ caja.querySelectorAll('[data-z]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const t=b.dataset.z;
+  if(t==='0')ajustar();else acercar(t==='+'?1.3:1/1.3)}));
+});
+</script>"""
 
 
 CSS = r"""
@@ -255,7 +284,12 @@ CSS = r"""
 .rels li{display:flex;flex-direction:column;gap:2px;margin:0;padding:8px 12px;border-left:3px solid var(--accent);background:var(--panel);border-radius:0 10px 10px 0}
 .rels code{color:#bce9df;font-weight:700}.rels span{font-size:clamp(13px,1.1vw,15px);color:var(--soft);line-height:1.4}.rels .sec{margin:0}
 .final{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(240px,.8fr);gap:clamp(14px,1.6vw,22px);align-items:start}
-.final .dgw svg{max-height:calc(100vh - 250px)}
+.final .dgw{padding:0;overflow:hidden;position:relative}
+.dgw .zoom{height:calc(100vh - 300px);min-height:300px;overflow:hidden;cursor:grab;touch-action:none;position:relative}
+.dgw .zoom.arrastra{cursor:grabbing}.dgw .zoom:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dgw .zoom svg{position:absolute;left:0;top:0;max-height:none;width:auto;transform-origin:0 0;user-select:none}
+.zctl{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--line);background:var(--panel)}
+.zctl button{min-width:38px;padding:6px 10px;font-size:15px}.zctl span{color:var(--muted);font-size:12.5px;margin-left:8px}
 .cifras{list-style:none;padding:0;margin:0 0 10px}.cifras li{margin:0 0 8px}.cifras b{color:var(--accent);font-size:1.3em;margin-right:4px}
 @media (max-width:980px){.conf,.final,.proceso-c{grid-template-columns:1fr}}
 """
