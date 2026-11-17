@@ -292,8 +292,10 @@ def menu_html(slides, grupos):
                 f'<div><b><span class="nro">{g}</span>{esc(gr["titulo"])}</b>'
                 f'<span class="desc">{esc(gr["desc"])}</span><span class="arch">{archivos}</span></div></div>')
     columnas = "".join(f'<div class="col"><h3>{esc(t)}</h3>{"".join(item(g) for g in gs)}</div>' for t, gs in COLUMNAS)
-    extra = ('<p class="extra"><button class="preg" data-s="{}">Recorrido general</button>'
-             '<button class="preg" id="proceso">Cómo se llegó a este diseño</button></p>').format(grupos[0]["slides"][0])
+    play = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5-12-7.5Z"/></svg>'
+    pasos = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h5v-5h5V8h6"/><path d="M17 5l3 3-3 3"/></svg>'
+    extra = ('<p class="extra"><button class="preg" data-s="{}">{}Recorrido general</button>'
+             '<button class="preg" id="proceso">{}Cómo se llegó a este diseño</button></p>').format(grupos[0]["slides"][0], play, pasos)
     return f'<div class="mega">{columnas}</div>{extra}'
 
 
@@ -521,9 +523,11 @@ body.modo-lista .top span:first-child{color:var(--text);font-weight:600;letter-s
 #lista .fch{background:none;border:0;padding:0;font:500 12.5px/1.4 "Montserrat",sans-serif;color:#bce9df;cursor:pointer}
 #lista .fch:hover{text-decoration:underline;color:var(--text)}
 #lista .gr.visto::after{content:"Visto";position:static;grid-column:2;justify-self:start;margin-top:6px;font:600 11px/1 "Montserrat",sans-serif;color:var(--bg);background:var(--accent);border-radius:99px;padding:4px 8px}
-.extra{display:flex;gap:28px;margin:clamp(10px,1.8vh,18px) 0 0}
-.preg{background:none;border:0;padding:4px 0;font:500 clamp(14px,1.05vw,15.5px)/1.3 "Montserrat",sans-serif;color:var(--muted);cursor:pointer;border-radius:0}
-.preg:hover{color:var(--text);text-decoration:underline;border:0}
+.extra{display:flex;flex-wrap:wrap;gap:12px;margin:clamp(12px,2vh,20px) 0 0}
+.preg{display:inline-flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:clamp(10px,1.4vh,13px) 18px;
+  font:600 clamp(14px,1.05vw,15.5px)/1.2 "Montserrat",sans-serif;color:var(--text);cursor:pointer}
+.preg svg{width:19px;height:19px;fill:none;stroke:var(--accent);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.preg:hover{border-color:var(--accent);background:var(--panel2)}
 .preg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:1100px){.mega{grid-template-columns:repeat(2,minmax(0,1fr))}.mega .col+.col{border-left:0}}
 @media (max-width:640px){.mega{grid-template-columns:1fr}}
