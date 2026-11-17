@@ -597,6 +597,8 @@ function enfocar(c){limpiarEnfoque();const nodo=$('#svgc .nodo[data-k="'+c+'"]')
 function centrar(el){const r=el.getBoundingClientRect(),l=len.getBoundingClientRect();
  const arriba=r.height>l.height*.8?40:Math.max(40,(l.height-r.height)/2);
  len.scrollTo({left:len.scrollLeft+r.left-l.left-Math.max(30,(l.width-r.width)/2),top:len.scrollTop+r.top-l.top-arriba,behavior:reducido?'auto':'smooth'})}
+addEventListener('message',e=>{const m=e.data||{};if(m.irAClase)irAClase(m.irAClase)});
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;if(e.key==='p'&&parent!==window)parent.postMessage({modo:'presentacion'},'*')});
 function irAClase(c){irA($('#t-c'));const n=$('#svgc .nodo[data-k="'+c+'"]');if(!n)return;
  mostrar(n);centrar(n);n.focus({preventScroll:true})}
 const TXT={a:'se asocia con',c:'contiene',d:'consulta a',h:'hereda de'};
