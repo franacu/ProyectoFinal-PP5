@@ -242,25 +242,12 @@ P += [
  paso("his_registro", 1, "historial.py: Operacion y Registro", HIS, R(HIS, "from __future__", "return dict(self.detalle).get(clave)"),
       "§9: cada cambio deja constancia de quién hizo qué, cuándo y sobre qué recursos.",
       n("class Operacion(Enum)", "Operacion: qué se puede registrar",
-        "Otra lista cerrada, como los catálogos: enumera **todo lo que puede quedar registrado** en el historial, agrupado por tema (avisos, emergencias, misiones y recursos). "
-        "Nadie usa una operación a mano: cada método del dominio deja la suya **en el momento en que ocurre el cambio**.\n\n"
-        "**Simulación: AVISO_REGISTRADO.** Un reportante registra un aviso de inundación:\n\n"
-        "```\n"
-        "aviso = Aviso('rep-1', Ubicacion('Ruta 3 km 12', 'Río Grande'),\n"
-        "              TipoSituacion.INUNDACION, Gravedad.ALTA,\n"
-        "              'Agua ingresando a viviendas', 20/11 10:00)\n"
-        "```\n\n"
-        "El constructor del aviso deja, solo, su primer registro:\n\n"
-        "| quién | cuándo | qué | sobre qué | detalle |\n"
-        "|---|---|---|---|---|\n"
-        "| rep-1 | 10:00 | AVISO_REGISTRADO | av-1 | tipo: inundacion · gravedad: alta |\n\n"
-        "Si después el reportante agrega una nota y un operador lo descarta, el historial crece:\n\n"
-        "```\n"
-        "10:00  rep-1  AVISO_REGISTRADO   av-1   tipo=inundacion, gravedad=alta\n"
-        "10:15  rep-1  NOTA_AGREGADA      av-1\n"
-        "10:30  op-1   AVISO_DESCARTADO   av-1   justificacion=Aviso duplicado\n"
-        "```",
-        "§9: el historial dice siempre qué pasó con un nombre del catálogo, nunca con un texto libre que cada uno escribe distinto."),
+        "Son las **etiquetas** que identifican cada acción que queda guardada en el historial: dicen **qué pasó** (se registró un aviso, se asignó una misión, se cambió un vehículo…).\n\n"
+        "**Ejemplo: AVISO_REGISTRADO.** Cuando un reportante crea un aviso, el constructor guarda solo este registro:\n\n"
+        "| quién | cuándo | qué | sobre qué |\n"
+        "|---|---|---|---|\n"
+        "| rep-1 | 10:00 | AVISO_REGISTRADO | av-1 |",
+        "Leyendo el historial se sabe qué pasó, siempre con el mismo nombre (§9)."),
       n("@dataclass(frozen=True, slots=True)", "Registro: quién, cuándo y qué",
         "Un registro es inmutable, igual que Ubicacion. `tuple[str, ...]` es una tupla de textos de cualquier largo; `detalle` guarda pares (clave, texto) y su `= ()` es el valor por defecto: tupla vacía."),
       n("def __post_init__", "Validar el registro",
