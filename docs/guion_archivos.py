@@ -608,7 +608,17 @@ P += [
  paso("uni_compromiso", 4, "unidad.py: comprometer, liberar y exigir_jefe", UNI, R(UNI, "def comprometer", "no es el jefe de la unidad"),
       "§8.2 y §8.3: la unidad verifica todo y recién entonces se reserva.",
       n("self._condicion.verificar_habilitada()", "comprometer(): las condiciones en orden",
-        "Habilitada, libre, vehículo operativo y compatible, personal y equipamiento. Cada una lanza su motivo; solo si todas pasan guarda el id de la misión."),
+        "Verifica **todas** las condiciones del §8.2, en este orden:\n"
+        "\n"
+        "1. la unidad está **habilitada** → si no, UnidadNoHabilitada,\n"
+        "2. la unidad está **libre** → si no, UnidadOcupada,\n"
+        "3. su vehículo está **operativo** → si no, VehiculoIncompatible,\n"
+        "4. su vehículo **sirve para la misión** → si no, VehiculoIncompatible,\n"
+        "5. hay **personal suficiente** → si no, PersonalInsuficiente,\n"
+        "6. tiene el **equipamiento** operativo → si no, EquipamientoInsuficiente.\n"
+        "\n"
+        "Solo si pasan las seis, guarda el id de la misión y la unidad queda reservada.",
+        "Si cualquier condición falla, el error dice el motivo y la unidad queda exactamente como estaba."),
       n("def liberar", "liberar(): solo la misión que reservó",
         "Recupera la disponibilidad dejando _mision_id en None, pero solo si quien lo pide es la misión que la reservó."),
       n("def exigir_jefe", "exigir_jefe(): solo el jefe",
@@ -616,9 +626,22 @@ P += [
  paso("uni_admin", 4, "unidad.py: administrar el personal, el vehículo y el equipo", UNI, R(UNI, "def incorporar_personal", "self._registros.append(registro)", antes=0)[0:1] + (R(UNI, "def cambiar_condicion_equipo", "self._registros.append(registro)")[1],),
       "§2.4: se agregan, quitan y cambian recursos, siempre con la misma secuencia.",
       n("def incorporar_personal", "La secuencia de todos los mutadores",
-        "1) _exigir_modificable() 2) validar 3) armar el Registro 4) cambiar y agregar el registro al final. Si algo falla antes del paso 4, la unidad queda como estaba."),
+        "Todos los métodos que modifican la unidad siguen los mismos cuatro pasos:\n"
+        "\n"
+        "1. `_exigir_modificable()`: si la unidad está comprometida, lanza UnidadComprometida,\n"
+        "2. **validar** el cambio (por ejemplo, que la persona no esté ya en la unidad),\n"
+        "3. **armar el Registro** de la operación,\n"
+        "4. **cambiar** la unidad y agregar el registro al final.",
+        "Si algo falla antes del paso 4, la unidad queda como estaba (R6, §8.4)."),
       n("del self._personal", "retirar_personal(): el jefe no se retira",
-        "`del diccionario[clave]` borra esa entrada. Antes se verifica que la persona integre la unidad y que no sea el jefe."),
+        "Antes de borrar, comprueba tres cosas:\n"
+        "\n"
+        "1. que la unidad **se pueda modificar** (no comprometida),\n"
+        "2. que la persona **integre la unidad** → si no, NoEncontrado,\n"
+        "3. que **no sea el jefe** → si lo es, RecursoInvalido.\n"
+        "\n"
+        "Después arma el registro y recién ahí `del diccionario[clave]` borra a la persona.",
+        "Una unidad nunca queda sin jefe."),
       n("def cambiar_vehiculo", "Cambiar el vehículo y su condición",
         "cambiar_vehiculo reemplaza el vehículo y deja el anterior en el detalle del registro. cambiar_condicion_vehiculo usa con_condicion, que valida antes de tocar."),
       n("def incorporar_equipo", "Equipo: incorporar, retirar y cambiar condición",
@@ -630,7 +653,12 @@ P += [
       n("def registrar_alta", "registrar_alta(): el primer registro",
         "La flota la llama al incorporar la unidad. Deja el registro «unidad registrada» con la base en el detalle."),
       n("def _cambiar_condicion", "_cambiar_condicion(): el cambio común",
-        "Es privado (empieza con _). Exige que se pueda modificar, arma el registro con la condición anterior y la nueva, y recién después cambia."),
+        "Es un método **privado** (empieza con _) que comparten los tres métodos de condición. Hace tres pasos:\n"
+        "\n"
+        "1. exige que la unidad **se pueda modificar**,\n"
+        "2. arma el registro con la condición **anterior** y la **nueva**,\n"
+        "3. recién después **cambia** la condición y guarda el registro.",
+        "El historial muestra siempre de qué condición a qué condición pasó la unidad."),
       n("def _exigir_modificable", "_exigir_modificable(): comprometida no se toca",
         "Si la unidad tiene una misión, lanza UnidadComprometida. Es la primera línea de todos los métodos que modifican (§8.4).")),
 ]
@@ -640,9 +668,23 @@ P += [
  paso("mis_valores", 5, "mision.py: Novedad, Resultado y VistaMision", MIS, R(MIS, "class Novedad", "resultado: Resultado | None", antes=1),
       "§2.3 y §8.1: lo que el jefe informa durante y al terminar una misión.",
       n("class Novedad", "Novedad: autor, texto y fecha",
-        "Valor inmutable: lo que el jefe informa mientras la misión se ejecuta. Se valida al nacer, como Nota."),
+        "Un **valor inmutable**: lo que el jefe informa mientras la misión se ejecuta. Igual que Nota, exige tres cosas:\n"
+        "\n"
+        "1. un **autor** (el jefe),\n"
+        "2. un **texto** con contenido,\n"
+        "3. una **fecha y hora**.\n"
+        "\n"
+        "Si falta cualquiera, lanza MisionInvalida.",
+        "No queda registrada una novedad vacía o sin autor."),
       n("class Resultado", "Resultado: qué se logró y qué se hizo",
-        "Exige un resultado del catálogo, las tareas descriptas y la fecha. `satisfactorio` es una propiedad que dice si el resultado fue satisfactorio."),
+        "Lo que el jefe registra al finalizar. Exige tres cosas:\n"
+        "\n"
+        "1. un **resultado** del catálogo (satisfactorio o no satisfactorio),\n"
+        "2. la descripción de las **tareas** realizadas,\n"
+        "3. una **fecha y hora**.\n"
+        "\n"
+        "Si falta cualquiera, lanza ResultadoInvalido. La propiedad `satisfactorio` responde si el resultado fue satisfactorio.",
+        "§2.3: el jefe declara si cumplió el objetivo y qué hizo. Una emergencia solo cierra si alguna misión fue satisfactoria."),
       n("class VistaMision", "VistaMision: una foto de solo lectura",
         "Copia de los datos de la misión (id, tipo, estado, unidad, novedades, resultado) que sale de la emergencia. Con ella se mira la misión sin poder cambiarla.")),
  paso("mis_estados", 5, "mision.py: los cinco estados", MIS, R(MIS, "class EstadoMision", "_FINALIZADA, _CANCELADA ="),
@@ -656,11 +698,21 @@ P += [
       n("def verificar_concluida", "Dos preguntas para la emergencia",
         "verificar_concluida() lanza MisionSinConcluir si la misión sigue abierta; exito() dice si terminó bien. Por defecto: no concluida y no exitosa."),
       n("class _Pendiente", "Pendiente y Asignada: sus salidas",
-        "Pendiente puede asignarse o cancelarse. Asignada puede reasignarse (sigue asignada), rechazarse (vuelve a pendiente), iniciarse o cancelarse. Cada método devuelve el estado siguiente."),
+        "Cada método devuelve el **estado siguiente**:\n"
+        "\n"
+        "- **Pendiente** → `asignar()` pasa a Asignada · `cancelar()` pasa a Cancelada.\n"
+        "- **Asignada** → `reasignar()` sigue Asignada · `rechazar()` vuelve a Pendiente · `iniciar()` pasa a En ejecución · `cancelar()` pasa a Cancelada.\n"
+        "\n"
+        "Lo que no aparece en la lista lo rechaza la base con MisionEnEstadoInvalido.",
+        "§8.1: no hay transiciones arbitrarias; cada estado sabe a dónde puede ir."),
       n("class _EnEjecucion", "En ejecución: novedades y finalizar",
         "Admite novedades (pass: acepta) y finalizar, que lleva a Finalizada. No se puede cancelar una misión ya en ejecución."),
       n("class _Finalizada", "Finalizada y Cancelada: terminales",
-        "No admiten ninguna operación. Ambas pisan verificar_concluida con `pass`; solo Finalizada con resultado satisfactorio cuenta como éxito."),
+        "No admiten ninguna operación: una misión finalizada o cancelada **no se reabre**.\n"
+        "\n"
+        "- Las dos pisan `verificar_concluida` con `pass`: cuentan como **concluidas**.\n"
+        "- Solo **Finalizada** con resultado satisfactorio cuenta como **éxito**.",
+        "La emergencia puede cerrarse cuando todas sus misiones llegaron a uno de estos dos estados (§7.2)."),
       n("_PENDIENTE, _ASIGNADA", "Un objeto por estado",
         "Igual que en el aviso: una instancia reutilizable de cada estado.")),
  paso("mis_asignacion", 5, "mision.py: la unidad asignada (Null Object)", MIS, R(MIS, "class _Asignacion", "_SIN_UNIDAD ="),
@@ -678,7 +730,13 @@ P += [
       n("tipo: TipoMision", "Atributos de clase declarados, sin valor",
         "Estas tres líneas solo anotan que cada subclase debe definir su tipo, sus situaciones admitidas y sus puestos. Están en la clase y no en cada objeto."),
       n("def __init__", "Mision.__init__: nace pendiente y sin unidad",
-        "Valida el objetivo, genera el id y arranca en _PENDIENTE con _SIN_UNIDAD. Las novedades empiezan vacías y el resultado en None."),
+        "Al crear una misión:\n"
+        "\n"
+        "1. **valida** el objetivo → si está vacío, MisionInvalida,\n"
+        "2. **genera el id**, igual que el aviso,\n"
+        "3. arranca en **_PENDIENTE** y **_SIN_UNIDAD**,\n"
+        "4. las **novedades** empiezan vacías y el **resultado** en None.",
+        "Toda misión nace igual, sin importar su tipo: pendiente y sin unidad (§8.1)."),
       n("def verificar_vehiculo", "Dos métodos que cada tipo define",
         "verificar_vehiculo (doble despacho: le pregunta al vehículo) y verificar_equipamiento son abstractos: cada subclase los implementa."),
       n("def verificar_personal", "verificar_personal(): personas distintas",
@@ -690,21 +748,61 @@ P += [
  paso("mis_operador", 5, "mision.py: asignar, reasignar y cancelar", MIS, (R(MIS, "def asignar(self, unidad", "def asignar(self, unidad")[0], R(MIS, "def cancelar(self) -> None", "self._estado = siguiente")[1]),
       "§2.2: lo que hace el operador sobre una misión.",
       n("siguiente = self._estado.asignar()", "asignar(): primero preguntar, después comprometer",
-        "El estado dice a cuál pasa. unidad.comprometer(self) verifica todo; si falla, no cambió nada. Recién ahí guarda _ConUnidad y cambia de estado."),
+        "Tres pasos, en orden:\n"
+        "\n"
+        "1. **pregunta al estado** a cuál pasa: si no admite asignarse, lanza MisionEnEstadoInvalido,\n"
+        "2. `unidad.comprometer(self)` **verifica todo** (habilitada, libre, vehículo, personal y equipo),\n"
+        "3. recién ahí **guarda** la unidad (`_ConUnidad`) y **cambia de estado**.",
+        "Si la unidad no sirve, la misión y la unidad quedan como estaban."),
       n("def reasignar", "reasignar(): la nueva primero",
-        "Compromete la unidad nueva antes de liberar la anterior: si la nueva falla, la anterior sigue asignada."),
+        "El orden es lo importante:\n"
+        "\n"
+        "1. pregunta al estado si admite reasignarse,\n"
+        "2. **compromete la unidad nueva**, que verifica todo,\n"
+        "3. recién después **libera la anterior**,\n"
+        "4. guarda la nueva asignación.",
+        "PV18: si la nueva unidad no cumple, la anterior sigue asignada y reservada, y nada cambia."),
       n("def cancelar", "cancelar(): liberar y quedar sin unidad",
-        "Libera la unidad reservada (si había) y vuelve a _SIN_UNIDAD antes de cambiar de estado.")),
+        "Tres pasos:\n"
+        "\n"
+        "1. pregunta al estado si admite cancelarse (solo Pendiente o Asignada),\n"
+        "2. **libera** la unidad reservada, si había,\n"
+        "3. vuelve a **_SIN_UNIDAD** y cambia a Cancelada.",
+        "PV15: la unidad queda disponible y la misión no puede iniciarse después.")),
  paso("mis_jefe", 5, "mision.py: lo que hace el jefe de la unidad", MIS, R(MIS, "def rechazar(self, jefe_id", "self._estado = siguiente", antes=0)[0:1] + (R(MIS, "def finalizar(self, jefe_id", "self._estado = siguiente")[1],),
       "§2.3: el jefe rechaza, inicia, informa novedades y finaliza.",
       n("def rechazar", "rechazar(): justificar y volver a pendiente",
-        "Solo el jefe, y con justificación. Libera la unidad, queda sin unidad y la misión vuelve a Pendiente."),
+        "Comprueba tres cosas y después cambia:\n"
+        "\n"
+        "1. que el estado admita rechazarse (solo Asignada),\n"
+        "2. que quien rechaza sea **el jefe** de la unidad,\n"
+        "3. que haya **justificación** → si no, JustificacionVacia.\n"
+        "\n"
+        "Recién entonces libera la unidad, queda sin unidad y vuelve a **Pendiente**.",
+        "PV13: la misión puede asignarse a otra unidad apta."),
       n("def iniciar", "iniciar(): solo el jefe",
-        "Pregunta al estado, comprueba que sea el jefe y cambia a En ejecución."),
+        "Dos comprobaciones y el cambio:\n"
+        "\n"
+        "1. pregunta al estado (solo Asignada puede iniciarse),\n"
+        "2. comprueba que sea **el jefe** de la unidad,\n"
+        "3. cambia a **En ejecución**.",
+        "§2.3: el operador no puede declarar iniciada una misión en nombre de la unidad."),
       n("def registrar_novedad", "registrar_novedad(): solo en ejecución",
-        "El estado lo permite solo En ejecución. Crea la Novedad (que se valida sola) y la agrega a la lista."),
+        "Tres pasos:\n"
+        "\n"
+        "1. el estado lo permite **solo en ejecución**,\n"
+        "2. comprueba que sea **el jefe**,\n"
+        "3. crea la **Novedad** (que se valida sola) y la agrega a la lista.",
+        "PV11: el jefe informa cómo avanza la intervención."),
       n("def finalizar", "finalizar(): validar el resultado antes de liberar",
-        "Comprueba estado y jefe, arma el Resultado (se valida) y recién después libera la unidad y cambia a Finalizada.")),
+        "Primero todo lo que puede fallar, después los cambios:\n"
+        "\n"
+        "1. pregunta al estado (solo En ejecución puede finalizar),\n"
+        "2. comprueba que sea **el jefe**,\n"
+        "3. arma el **Resultado**, que se valida solo.\n"
+        "\n"
+        "Recién después **libera la unidad**, guarda el resultado y cambia a **Finalizada**.",
+        "Si el resultado es inválido, la unidad no se libera y la misión sigue en ejecución.")),
  paso("mis_lectura", 5, "mision.py: lo que la emergencia le pregunta", MIS, (R(MIS, "def es_exitosa", "def es_exitosa")[0] - 3, R(MIS, "tuple(self._novedades), self._resultado)", "tuple(self._novedades), self._resultado)")[1]),
       "La emergencia pregunta sin poder modificar.",
       n("def verificar_concluida", "verificar_concluida() y es_exitosa()",
@@ -716,7 +814,14 @@ P += [
  paso("mis_tipos", 5, "mision.py: Evacuación, Rescate y Asistencia sanitaria", MIS, R(MIS, "class Evacuacion", "EQUIPO_SANITARIO)"),
       "§6.1 a §6.3: tres tipos de misión con requisitos distintos.",
       n("tipo = TipoMision.EVACUACION", "Cada tipo declara sus datos",
-        "tipo, situaciones_admitidas (frozenset: no se evacúa en un accidente vial) y puestos (conducción y evacuación). Son atributos de clase, iguales para todas las evacuaciones."),
+        "Evacuacion completa los tres atributos de clase que pidió Mision:\n"
+        "\n"
+        "1. `tipo`: EVACUACION,\n"
+        "2. `situaciones_admitidas`: inundación e incendio (un frozenset: no se evacúa en un accidente vial),\n"
+        "3. `puestos`: conducción y evacuación.\n"
+        "\n"
+        "Son iguales para todas las evacuaciones, por eso viven en la clase y no en cada objeto.",
+        "§6.1 y §6.4: los requisitos dependen del tipo de misión."),
       n("super().__init__", "Evacuacion.__init__: un dato más",
         "Valida la cantidad de personas y llama a super().__init__ para que la base valide el objetivo y cree el id."),
       n("vehiculo.verificar_evacuacion", "Doble despacho",
@@ -735,14 +840,25 @@ P += [
       n("def permitir_modificaciones", "_Estado: dos preguntas",
         "permitir_modificaciones() lanza EmergenciaCerrada si ya no se puede operar; cerrar() recibe las misiones y devuelve el estado siguiente. Mismo patrón abstracto que los otros State."),
       n("class _Abierta", "Abierta: permite todo y puede cerrarse",
-        "Acepta modificaciones (pass). Para cerrar recorre las misiones: `for mision in misiones` pide a cada una verificar_concluida(), y `any(...)` exige que al menos una sea exitosa."),
+        "Acepta modificaciones (`pass`). Para **cerrar** exige dos cosas:\n"
+        "\n"
+        "1. **todas** las misiones concluidas: recorre cada una con `verificar_concluida()` → si alguna sigue activa, MisionSinConcluir,\n"
+        "2. **al menos una** exitosa: `any(...)` → si ninguna lo es (o no hay misiones), SinMisionExitosa.",
+        "§7.2 y PV16: las dos condiciones del cierre, en el mismo lugar."),
       n("class _Cerrada", "Cerrada: rechaza todo",
         "Cualquier modificación y un segundo cierre lanzan EmergenciaCerrada."),
       n("_ABIERTA, _CERRADA", "Dos objetos únicos", "Una instancia de cada estado, reutilizada.")),
  paso("eme_init", 6, "emergencia.py: Emergencia.__init__", EME, R(EME, "class Emergencia:", "        ]"),
       "§7.2: una emergencia nace al aceptar un aviso.",
       n("if not hay_texto(aviso_id)", "Validar el origen",
-        "Exige el aviso de origen, el reportante y la ubicación; después el tipo y la gravedad del catálogo; después operador y fecha. Cada grupo lanza AceptacionInvalida."),
+        "Valida en tres grupos, en orden:\n"
+        "\n"
+        "1. el **aviso de origen**, el **reportante** y la **ubicación**,\n"
+        "2. el **tipo** y la **gravedad** confirmados, dentro del catálogo,\n"
+        "3. el **operador** que acepta y la **fecha** de aceptación.\n"
+        "\n"
+        "Si falla cualquier grupo, lanza AceptacionInvalida.",
+        "Una emergencia nace completa: sin ella el aviso tampoco cambia de estado."),
       n("self._estado: _Estado = _ABIERTA", "Nace abierta",
         "Guarda sus datos privados y empieza en el estado Abierta."),
       n("self._misiones: dict", "Las misiones por id",
@@ -752,17 +868,43 @@ P += [
  paso("eme_operador", 6, "emergencia.py: lo que hace el operador", EME, (R(EME, "def crear_mision", "def crear_mision")[0], R(EME, "def cancelar_mision", "self._registros.append(registro)")[1]),
       "§2.2: crear, asignar, reasignar y cancelar misiones.",
       n("def crear_mision", "crear_mision(): agregar una misión",
-        "Pregunta al estado, verifica que el tipo de misión sirva para la situación, arma el registro y recién al final agrega la misión al diccionario."),
+        "Cuatro pasos:\n"
+        "\n"
+        "1. pregunta al estado si la emergencia **está abierta**,\n"
+        "2. verifica que el tipo de misión **sirva para la situación** → si no, MisionIncompatible,\n"
+        "3. arma el registro MISION_CREADA,\n"
+        "4. recién al final **agrega la misión** al diccionario.",
+        "PV05: una evacuación para un accidente vial se rechaza sin dejar rastros."),
       n("def asignar_mision", "asignar_mision(): coordina y delega",
-        "Estado, búsqueda de la misión por id, registro y mision.asignar(unidad), que verifica todo. El registro se guarda solo si la misión aceptó."),
+        "La emergencia coordina y la misión verifica:\n"
+        "\n"
+        "1. la emergencia **está abierta**,\n"
+        "2. **busca la misión** por id → si no está, NoEncontrado,\n"
+        "3. arma el registro MISION_ASIGNADA,\n"
+        "4. `mision.asignar(unidad)` **verifica todo** lo demás.\n"
+        "\n"
+        "El registro se guarda solo si la misión aceptó la unidad.",
+        "§8.2: las siete verificaciones se reparten entre la emergencia, la misión y la unidad."),
       n("def reasignar_mision", "reasignar_mision(): quién era y quién es",
         "Guarda la unidad anterior antes de reasignar y deja ambas en el detalle del registro. `str(anterior)` convierte a texto aunque sea None."),
       n("def cancelar_mision", "cancelar_mision(): el registro antes de cancelar",
-        "Toma la unidad que se va a liberar, arma el registro y recién después cancela la misión.")),
+        "Cuatro pasos:\n"
+        "\n"
+        "1. la emergencia **está abierta**,\n"
+        "2. busca la misión,\n"
+        "3. toma la unidad que se va a liberar y **arma el registro**,\n"
+        "4. **cancela** la misión y guarda el registro.",
+        "El historial guarda qué unidad quedó liberada, aunque después la misión ya no la tenga.")),
  paso("eme_jefe", 6, "emergencia.py: lo que hace el jefe de unidad", EME, (R(EME, "def rechazar_mision", "def rechazar_mision")[0], R(EME, "def finalizar_mision", "tareas=tareas))")[1]),
       "§2.3: rechazar, iniciar, informar novedades y finalizar. Siempre pasan por la emergencia.",
       n("def rechazar_mision", "El mismo molde en las cuatro",
-        "Cada operación pide a la emergencia estar abierta, busca la misión, delega en ella y deja el registro. La misión valida que sea el jefe."),
+        "rechazar, iniciar, registrar novedad y finalizar siguen los mismos pasos:\n"
+        "\n"
+        "1. la emergencia **está abierta**,\n"
+        "2. **busca la misión** por id,\n"
+        "3. **delega** en la misión, que valida que sea el jefe,\n"
+        "4. deja el **registro**.",
+        "La emergencia no repite las reglas de la misión: solo coordina y deja constancia."),
       n("def registrar_novedad", "registrar_novedad(): la novedad queda en el detalle",
         "`novedad=texto` pasa el texto como dato con nombre al detalle del registro."),
       n("def finalizar_mision", "finalizar_mision(): resultado y tareas",
@@ -770,7 +912,12 @@ P += [
  paso("eme_cierre", 6, "emergencia.py: cerrar", EME, R(EME, "def cerrar(self, supervisor_id", "self._registros.append(registro)"),
       "§7.2: el supervisor cierra la emergencia.",
       n("self._estado.cerrar(", "cerrar(): el estado decide",
-        "Le pasa las misiones al estado: Abierta verifica que todas terminaron y alguna fue exitosa; Cerrada lanza error. Recién después se cambia el estado y se agrega el registro."),
+        "Tres pasos:\n"
+        "\n"
+        "1. le pasa las misiones al **estado**: Abierta verifica que todas terminaron y alguna fue exitosa; Cerrada lanza error,\n"
+        "2. arma el registro EMERGENCIA_CERRADA,\n"
+        "3. recién después **cambia el estado** y guarda el registro.",
+        "PV16: un cierre rechazado deja la emergencia abierta y admitiendo misiones."),
       ),
  paso("eme_lectura", 6, "emergencia.py: lectura y prioridad", EME, (R(EME, "def id(self)", "def id(self)", antes=1)[0], R(EME, "return tuple(sorted(abiertas", "return tuple(sorted(abiertas")[1]),
       "§4: las emergencias abiertas se atienden de más grave a menos grave.",
@@ -796,11 +943,25 @@ P += [
       "Dar de alta exige revisar a todas las demás.",
       n("def registrar_base", "registrar_base(): sin duplicados", "Si ya existe una base con ese id, lanza RecursoDuplicado; si no, la guarda."),
       n("def incorporar_unidad", "incorporar_unidad(): revisar todo y después guardar",
-        "Verifica que exista la base, que la unidad no esté repetida y que ninguna persona, vehículo o equipo ya esté en otra unidad. Recién después registra el alta y guarda la unidad.")),
+        "Antes de guardar, la flota verifica:\n"
+        "\n"
+        "1. que **exista la base** → si no, NoEncontrado,\n"
+        "2. que la unidad **no esté repetida** → si no, RecursoDuplicado,\n"
+        "3. que **ninguna persona** esté en otra unidad,\n"
+        "4. que el **vehículo** no esté en otra unidad,\n"
+        "5. que **ningún equipo** esté en otra unidad.\n"
+        "\n"
+        "Recién después registra el alta y guarda la unidad.",
+        "§5.2: ningún recurso termina en dos unidades a la vez.")),
  paso("flo_cambios", 6, "flota.py: cambios que miran a las demás unidades", FLO, R(FLO, "def incorporar_personal", "unidad.incorporar_equipo(equipo, actor_id, fecha_hora)"),
       "Agregar un recurso a una unidad existente también puede chocar con otra unidad.",
       n("def incorporar_personal", "Primero la flota, después la unidad",
-        "La flota busca la unidad y comprueba que el recurso esté libre en las demás (salvo en ella misma); si pasa, delega en la unidad, que valida lo suyo."),
+        "Tres pasos:\n"
+        "\n"
+        "1. la flota **busca la unidad** → si no existe, NoEncontrado,\n"
+        "2. comprueba que el recurso esté **libre en las demás** unidades,\n"
+        "3. **delega** en la unidad, que valida lo suyo (no comprometida, no repetido).",
+        "Cada uno controla lo que sabe: la flota ve todas las unidades, la unidad se ve a sí misma."),
       n("def cambiar_vehiculo", "Vehículo y equipo: el mismo orden", "cambiar_vehiculo e incorporar_equipo hacen lo mismo con sus propios chequeos.")),
  paso("flo_unicidad", 6, "flota.py: unicidad entre unidades", FLO, R(FLO, "def _exigir_persona_libre", "El equipo {equipo_id}"),
       "§5.2: una persona, vehículo o equipo no puede estar en dos unidades.",
