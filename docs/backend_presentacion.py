@@ -257,6 +257,53 @@ def ver(clase):
     return f'<button class="ver" data-c="{esc(clase)}" hidden>◇ Ver en el diagrama</button>' if clase else ""
 
 
+ICONOS = {   # íconos de línea, 24×24, dibujados con el color del texto
+    1: '<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>',
+    2: '<path d="M12 4 2.5 20h19L12 4Z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    3: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+    4: '<path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+    5: '<circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2A4.5 4.5 0 0 1 21 19"/>',
+    6: '<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
+    7: '<path d="M7 18v-5a5 5 0 0 1 10 0v5"/><path d="M5 18h14v3H5z"/><path d="M12 3v2M4.5 6l1.4 1.4M19.5 6l-1.4 1.4"/>',
+}
+# columnas del menú: los grupos en el orden en que se construyó el código, de izquierda a derecha
+COLUMNAS = [("Fundamentos", [1, 2]), ("Avisos y recursos", [3, 4, 5]), ("Coordinación", [6, 7])]
+
+FUENTES_MENU = [(400, "montserrat-latin-400-normal"), (500, "montserrat-latin-500-normal"),
+                (600, "montserrat-latin-600-normal"), (700, "montserrat-latin-700-normal")]
+
+
+def fuentes_menu():
+    """Montserrat incrustada en el HTML: el menú se ve igual sin internet."""
+    import base64
+    return "".join(
+        f'@font-face{{font-family:"Montserrat";font-weight:{peso};font-style:normal;font-display:swap;'
+        f'src:url(data:font/woff2;base64,{base64.b64encode((AQUI / "fuentes" / (nombre + ".woff2")).read_bytes()).decode()}) format("woff2")}}\n'
+        for peso, nombre in FUENTES_MENU)
+
+
+def menu_html(slides, grupos):
+    """La vista de inicio: tres columnas de grupos y, a la derecha, el recorrido general por pregunta."""
+    def item(g):
+        gr = grupos[g]
+        archivos = "".join(f'<button class="fch" data-g="{g}" data-f="{esc(a)}">{esc(a)}</button>' for a in gr["archivos"])
+        return (f'<div class="gr" data-g="{g}" tabindex="0" role="button" title="{len(gr["slides"])} diapositivas">'
+                f'<svg viewBox="0 0 24 24" aria-hidden="true">{ICONOS[g]}</svg>'
+                f'<div><b><span class="nro">{g}</span>{esc(gr["titulo"])}</b>'
+                f'<span class="desc">{esc(gr["desc"])}</span><span class="arch">{archivos}</span></div></div>')
+    columnas = "".join(f'<div class="col"><h3>{esc(t)}</h3>{"".join(item(g) for g in gs)}</div>' for t, gs in COLUMNAS)
+    preguntas, vistas = [], set()
+    for idx in grupos[0]["slides"]:   # primera diapositiva de cada pregunta del recorrido general
+        m = re.match(r"(\d+) · (.+)", slides[idx]["eyebrow"])
+        if m and m.group(1) not in vistas:
+            vistas.add(m.group(1))
+            texto = m.group(2)[:1].upper() + m.group(2)[1:]
+            preguntas.append(f'<button class="preg" data-s="{idx}">{esc(texto)}</button>')
+    lateral = (f'<aside class="lateral"><h3>Recorrido general</h3>{"".join(preguntas)}'
+               f'<button class="preg otro" id="proceso">Cómo se llegó a este diseño</button></aside>')
+    return f'<div class="mega">{columnas}{lateral}</div>'
+
+
 def pagina(slides, grupos):
     secciones, meta = [], []
     for n, s in enumerate(slides):
@@ -289,8 +336,8 @@ def pagina(slides, grupos):
             f'<span class="arch">{chips}</span><span class="desc">{esc(gr["desc"])}</span></div><small>{n} diapositivas</small></div>')
     grupos_js = [dict(titulo=gr["titulo"], archivos=gr["archivos"], slides=gr["slides"], entradas=gr["entradas"]) for gr in grupos]
     pagina_html = PLANTILLA
-    for clave, valor in (("%%SECCIONES%%", "\n".join(secciones)), ("%%GENERAL%%", tarjetas[0]),
-                         ("%%GRUPOS_HTML%%", "".join(tarjetas[1:])), ("%%META%%", json.dumps(meta, ensure_ascii=False)),
+    for clave, valor in (("%%SECCIONES%%", "\n".join(secciones)), ("%%MENU%%", menu_html(slides, grupos)),
+                         ("%%FUENTES_MENU%%", fuentes_menu()), ("%%META%%", json.dumps(meta, ensure_ascii=False)),
                          ("%%GRUPOS%%", json.dumps(grupos_js, ensure_ascii=False)), ("%%TOTAL%%", str(total))):
         pagina_html = pagina_html.replace(clave, valor)
     return pagina_html
@@ -457,18 +504,51 @@ button:hover{border-color:var(--accent)}button:disabled{opacity:.4;cursor:defaul
 @media (max-height:900px){#lista .lead{display:none}}
 @media (max-height:720px){h2{font-size:clamp(22px,2.6vw,30px);margin-bottom:8px}.eyebrow{margin-bottom:4px;font-size:12px}.cont li{padding:4px 0}.sigue{margin-bottom:6px}.sigue .paso{padding:2px 10px 2px 3px}.lead.corto{margin-bottom:6px}}
 @media (max-height:720px){.gr .desc{display:none}.gr{padding:10px 16px}}
+%%FUENTES_MENU%%
+/* ── vista de inicio (menú): blanca, Montserrat, columnas por tema ───────── */
+body.modo-lista,body.modo-lista .deck{background:#fff;color:#111827}
+body.modo-lista .top,body.modo-lista .bottom{background:#fff;border-color:#E5E7EB;color:#6B7280;font-family:"Montserrat",sans-serif;letter-spacing:0}
+body.modo-lista .top span:first-child{color:#111827;font-weight:600;letter-spacing:.12em}
+body.modo-lista button:not(.fch):not(.preg){background:#fff;border-color:#E5E7EB;color:#9CA3AF}
+#lista{font-family:"Montserrat",system-ui,sans-serif;color:#111827;max-width:1320px}
+#lista h1{font:600 clamp(26px,2.4vw,34px)/1.15 "Montserrat",sans-serif;letter-spacing:-.015em;color:#111827;margin:clamp(6px,1.5vh,18px) 0 6px}
+#lista .lead{font:400 clamp(14px,1.05vw,16px)/1.5 "Montserrat",sans-serif;color:#6B7280;max-width:760px;margin:0 0 clamp(14px,2.4vh,26px)}
+.mega{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,.82fr);border:2px solid #1F2937;background:#fff}
+.mega .col{padding:clamp(18px,3.2vh,34px) clamp(12px,1.6vw,24px) clamp(14px,2.4vh,26px)}
+.mega h3{font:600 15px/1.2 "Montserrat",sans-serif;color:#111827;margin:0 0 clamp(8px,1.6vh,16px);padding-left:14px}
+#lista .gr{display:grid;grid-template-columns:24px minmax(0,1fr);gap:0 12px;align-items:start;background:none;border:0;border-radius:12px;
+  padding:clamp(10px,1.6vh,15px) 14px;margin-bottom:clamp(2px,.6vh,8px);cursor:pointer;color:#111827;box-shadow:none;position:relative}
+#lista .gr:hover,#lista .gr:focus-visible{background:#E6F1FD;outline:none}
+#lista .gr:focus-visible{box-shadow:0 0 0 2px #1D7FE0}
+#lista .gr svg{width:23px;height:23px;margin-top:1px;fill:none;stroke:#111827;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+#lista .gr>div{display:block}
+#lista .gr b{display:flex;align-items:baseline;gap:7px;font:600 clamp(15.5px,1.25vw,18px)/1.25 "Montserrat",sans-serif;margin:0 0 4px;color:#111827}
+#lista .gr .nro{color:#9CA3AF;font-weight:500}
+#lista .gr .desc{display:block;font:400 clamp(13px,1vw,15px)/1.45 "Montserrat",sans-serif;color:#6B7280;margin:0}
+#lista .gr .arch{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
+#lista .fch{background:none;border:0;padding:0;font:500 12.5px/1.4 "Montserrat",sans-serif;color:#1D7FE0;cursor:pointer}
+#lista .fch:hover{text-decoration:underline}
+#lista .gr.visto::after{content:"Visto";position:static;grid-column:2;justify-self:start;margin-top:6px;font:600 11px/1 "Montserrat",sans-serif;color:#1D7FE0;background:#E6F1FD;border-radius:99px;padding:4px 8px}
+#lista .gr:hover.visto::after{background:#fff}
+.mega .lateral{background:#D3E8FB;padding:clamp(18px,3.2vh,34px) clamp(18px,2vw,32px)}
+.mega .lateral h3{padding-left:0}
+.preg{display:block;width:100%;text-align:left;background:none;border:0;padding:clamp(6px,1.15vh,11px) 0;font:400 clamp(14.5px,1.15vw,17px)/1.3 "Montserrat",sans-serif;color:#111827;cursor:pointer;border-radius:0}
+.preg:hover{color:#1D7FE0;border:0}
+.preg:focus-visible{outline:2px solid #1D7FE0;outline-offset:2px}
+.preg.otro{margin-top:clamp(8px,1.6vh,16px);padding-top:clamp(10px,1.8vh,16px);border-top:1px solid #A9CDEF;font-weight:500}
+@media (max-width:1100px){.mega{grid-template-columns:repeat(2,minmax(0,1fr))}.mega .lateral{grid-column:1/-1}}
+@media (max-width:640px){.mega{grid-template-columns:1fr}}
+@media (max-height:900px){#lista .gr .arch{display:none}}
+@media (max-height:760px){#lista .lead{display:none}#lista .gr .desc{font-size:13px}}
 </style></head>
 <body>
 <div class="deck">
 <header class="top"><span>CRCE · CENTRO REGIONAL DE COORDINACIÓN DE EMERGENCIAS</span><select id="salto" aria-label="Ir a una diapositiva" hidden></select><span id="ctx">POO V · BACKEND</span></header>
 <main id="main">
 <section id="lista" class="on">
- <div class="eyebrow">presentación del backend</div>
  <h1>Elegí qué presentar</h1>
- <p class="lead">Empezá por el recorrido general o elegí un grupo de archivos, del primero que se escribió al último que se armó. Con una tecla volvés a esta lista.</p>
- %%GENERAL%%
- <div class="grs">%%GRUPOS_HTML%%</div>
- <p class="aparte"><button id="proceso">Cómo se llegó a este diseño: presentación por pasos</button></p>
+ <p class="lead">Cada grupo explica el código de sus archivos, en el orden en que se construyó. A la derecha, el recorrido general por pregunta.</p>
+ %%MENU%%
 </section>
 %%SECCIONES%%
 </main>
@@ -482,12 +562,13 @@ let i=-1,k=0,G=null,gi=-1;const vistos=new Set();
 function mostrarLista(){i=-1;k=0;G=null;gi=-1;pintar()}
 function entrar(g,desde){gi=g;G=GRUPOS[g].slides;i=desde===undefined?G[0]:desde;k=0;pintar()}
 function pintar(){
- const enLista=i<0;$('#lista').classList.toggle('on',enLista);
+ const enLista=i<0;$('#lista').classList.toggle('on',enLista);document.body.classList.toggle('modo-lista',enLista);
  slides.forEach((s,x)=>{s.hidden=x!==i;s.classList.toggle('active',x===i)});
  $('#lista-b').hidden=enLista;$('#salto').hidden=enLista||innerWidth<=640;
  $('#prev').disabled=enLista;$('#next').disabled=enLista;
  document.querySelectorAll('.gr').forEach(e=>e.classList.toggle('visto',vistos.has(+e.dataset.g)));
- if(enLista){$('#count').textContent='';$('#ctx').textContent='POO V · BACKEND';$('#pista').textContent='Elegí una tarjeta o un archivo · F pantalla completa';return}
+ if(emb)parent.postMessage({tema:enLista?'claro':'oscuro'},'*');
+ if(enLista){$('#prev').textContent='Anterior';$('#next').textContent='Siguiente';$('#count').textContent='';$('#ctx').textContent='POO V · BACKEND';$('#pista').textContent='Elegí una tarjeta o un archivo · F pantalla completa';return}
  vistos.add(gi);
  const p=G.indexOf(i),m=META[i];
  $('#ctx').textContent='POO V · BACKEND · '+GRUPOS[gi].titulo;
@@ -581,6 +662,7 @@ document.addEventListener('keydown',e=>{
 });
 $('#next').onclick=sig;$('#prev').onclick=atras;$('#lista-b').onclick=mostrarLista;
 $('#salto').onchange=e=>{i=+e.target.value;k=0;pintar();e.target.blur()};
+document.querySelectorAll('.preg[data-s]').forEach(b=>b.addEventListener('click',()=>entrar(0,+b.dataset.s)));
 document.querySelectorAll('.gr').forEach(c=>{
  c.addEventListener('click',e=>{const f=e.target.closest('.fch');const g=+c.dataset.g;entrar(g,f?GRUPOS[g].entradas[f.dataset.f]:undefined)});
  c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();entrar(+c.dataset.g)}});

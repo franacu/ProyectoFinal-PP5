@@ -22,7 +22,8 @@ body{font:15px/1.4 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-s
 main{position:absolute;inset:0}iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
 iframe[hidden]{display:none}
 #hb{position:fixed;z-index:30;top:6px;left:10px;width:40px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--accent);font-size:21px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-#hb:hover{border-color:var(--accent)}#hb:focus-visible,nav button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#hb:hover{border-color:var(--accent)}
+body.claro #hb{background:#fff;border-color:#E5E7EB;color:#111827;box-shadow:none}body.claro #hb:hover{border-color:#111827}#hb:focus-visible,nav button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #velo{position:fixed;inset:0;z-index:15;background:rgba(5,8,18,.55);display:none}#velo.on{display:block}
 nav{position:fixed;z-index:20;top:0;bottom:0;left:0;width:min(290px,86vw);background:var(--panel);border-right:1px solid var(--line);color:var(--text);display:flex;flex-direction:column;padding:12px 14px 16px;gap:8px;transform:translateX(-102%);transition:transform .2s}
 nav.abierto{transform:none;box-shadow:8px 0 32px rgba(0,0,0,.5)}
@@ -52,7 +53,7 @@ function modo(m,clase){
  const f=d?fd:pr?fp:fb;
  setTimeout(()=>{f.focus();f.contentWindow&&f.contentWindow.focus();if(d&&clase)f.contentWindow.postMessage({irAClase:clase},'*')},60)}
 bp.onclick=()=>modo('presentacion');bd.onclick=()=>modo('diagrama');hb.onclick=()=>menu();velo.onclick=()=>menu(false);
-addEventListener('message',e=>{const m=e.data||{};if(m.modo)modo(m.modo,m.clase);else if(m.menu)menu()});
+addEventListener('message',e=>{const m=e.data||{};if(m.tema)document.body.classList.toggle('claro',m.tema==='claro');else if(m.modo)modo(m.modo,m.clase);else if(m.menu)menu()});
 addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const t=e.key.toLowerCase();if(t==='p')modo('presentacion');else if(t==='d')modo('diagrama');else if(t==='m')menu();else if(e.key==='Escape')menu(false)});
 fb.addEventListener('load',()=>fb.contentWindow.focus());
 </script></body></html>"""
