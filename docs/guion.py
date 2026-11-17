@@ -61,12 +61,12 @@ PASOS = [
          por_que="Los tipos de situación, gravedad, etc. son listas cerradas: un Enum evita textos sueltos.",
          notas=[("class Catalogo(Enum)", "Enum", "Lista cerrada de valores con nombre.", "Una situación solo puede ser inundación, incendio o accidente vial."),
                 ("@classmethod", "classmethod", "Método que recibe la clase (cls) y no una instancia.", "Se llama Catalogo.contiene(x) sin crear objetos."),
-                ("return valor in tuple(cls)", "tuple(cls)", "Recorre los miembros reales del Enum.", "Con `in cls` el texto \"inundacion\" también pasaría (Python 3.12+).")]),
+                ("return valor in tuple(cls)", "tuple(cls)", "Recorre los miembros reales del Enum.", "Con `in cls` el texto \"inundacion\" también pasaría como válido.")]),
     dict(tipo="escenario", titulo="0 · Ejemplo concreto", clave="catalogo", clase=None),
     dict(tipo="codigo", titulo="8 · Un valor inmutable: la ubicación", clase="Ubicacion", archivo="dominio/valores.py", simbolo="Ubicacion",
          por_que="Una dirección no tiene identidad propia: dos con los mismos datos son la misma. Se crea válida y no cambia.",
          notas=[("@dataclass(frozen=True, slots=True)", "dataclass frozen", "Genera constructor e igualdad; frozen impide modificar atributos.", "Es un objeto de valor: inmutable."),
-                ("slots=True", "slots", "Reserva atributos fijos, sin diccionario dinámico.", "Evita agregar campos por error."),
+                ("slots=True", "slots", "Fija los únicos campos que existen.", "Evita agregar campos por error."),
                 ("def __post_init__", "__post_init__", "Se ejecuta justo después de construir el objeto.", "Valida antes de que exista: nunca hay una Ubicacion inválida."),
                 ("raise DatoDeAvisoInvalido", "excepción de dominio", "Error propio con nombre del negocio.", "La capa HTTP lo traduce a 422 sin mirar el texto.")]),
     dict(tipo="escenario", titulo="0 · Ejemplo concreto", clave="frozen", clase=None),
@@ -81,7 +81,7 @@ PASOS = [
          por_que="El único estado donde se puede evaluar. Los otros dos lanzan AvisoNoPendiente.",
          notas=[("class _Pendiente(_Estado)", "herencia", "Subclase que cumple el contrato.", "Polimorfismo: el Aviso trata a todos igual."),
                 ("def permitir_nota(self) -> None:", "permitir_*", "Valida sin devolver nada.", "Pendiente acepta notas: `pass` significa permitido."),
-                ("return _DESCARTADO", "estado singleton", "Instancia única reutilizada.", "Los estados no guardan datos, no hace falta crear uno por aviso."),
+                ("return _DESCARTADO", "una sola instancia", "Un único objeto que se reutiliza.", "Los estados no guardan datos, no hace falta crear uno por aviso."),
                 ("raise DatoDeAvisoInvalido", "coherencia al reconstruir", "Revisa estado vs. descarte.", "Un pendiente con descarte es un dato corrupto.")]),
     dict(tipo="escenario", titulo="0 · Ejemplo concreto", clave="estado_if", clase=None),
     dict(tipo="codigo", titulo="11 · Aceptar: falla antes de modificar", clase="Aviso", archivo="dominio/aviso.py", simbolo="Aviso.aceptar",
@@ -223,7 +223,7 @@ EXPLICA = {
         "estado: _Estado = _Pendiente()\nestado.aceptar()   # Python elige el método correcto"),
     (A, "_Pendiente", "permitir_*"): ("Convención: un método que no devuelve nada, solo deja pasar o lanza un error. `pass` significa «sí, se permite».",
         "aviso.agregar_nota(...)   # pide permiso al estado\n# pendiente: sigue; descartado: AvisoNoPendiente"),
-    (A, "_Pendiente", "estado singleton"): ("Una sola instancia compartida. Como el estado no guarda datos del aviso, no hace falta uno nuevo por aviso.",
+    (A, "_Pendiente", "una sola instancia"): ("Una sola instancia compartida. Como el estado no guarda datos del aviso, no hace falta uno nuevo por aviso.",
         "_ACEPTADO is _ACEPTADO   # siempre el mismo objeto"),
     (A, "_Pendiente", "coherencia al reconstruir"): ("Al restaurar desde la base de datos se comprueba que el estado y el descarte no se contradigan.",
         "Aviso.restaurar(estado=PENDIENTE, descarte=algo)   # DatoDeAvisoInvalido"),
@@ -333,7 +333,7 @@ DECISION = {
         "Un campo `estado` con texto y un `if` en cada operación del Aviso.", "Con herencia y polimorfismo el Aviso no tiene ningún `if` de estado: cumple lo que pidió el profesor."),
     (A, "_Pendiente", "permitir_*"): ("Algunas preguntas son del tipo «¿puedo hacer esto?» y no hay nada que devolver.",
         "Devolver True/False y que el Aviso decida el error.", "Que el estado lance su propia excepción deja el motivo en un solo lugar, junto a la regla."),
-    (A, "_Pendiente", "estado singleton"): ("Los estados no guardan datos del aviso; si se crearan nuevos por cada aviso serían copias idénticas.",
+    (A, "_Pendiente", "una sola instancia"): ("Los estados no guardan datos del aviso; si se crearan nuevos por cada aviso serían copias idénticas.",
         "Crear un estado nuevo con cada aviso.", "Una instancia compartida ahorra objetos y permite comparar con `is`. Es seguro porque no tiene datos que mutar."),
     (A, "_Pendiente", "coherencia al reconstruir"): ("Un aviso leído de la base podría venir contradictorio (pendiente pero con descarte).",
         "Confiar en que la base siempre tiene datos buenos.", "El estado conoce su propia regla; validar al restaurar evita aceptar datos corruptos en silencio."),
@@ -428,3 +428,24 @@ ALTERNATIVA = {
     ("Unidad", "Vehiculo"): "Lista de vehículos. Se descartó: §5.2 dice «un vehículo asignado».",
     ("Mision", "Unidad"): "Que la misión guarde `None` cuando está pendiente. Se descartó: obliga a `if unidad is None` en todos lados; se usó un Null Object (_SinUnidad) que no hace nada.",
 }
+
+
+# ── Ajustes de redacción: más práctico, sin jerga ni versiones de Python ─────────────────────
+EXPLICA.update({
+    (C, "Catalogo", "tuple(cls)"): ("Arma la lista de valores válidos y pregunta si el dato está entre ellos: solo pasan los valores del catálogo, no textos parecidos.",
+        "TipoSituacion.contiene(TipoSituacion.INCENDIO)   # True\nTipoSituacion.contiene(\"incendio\")   # False: es un texto"),
+    (U, "Ubicacion", "dataclass frozen"): ("Permite tres cosas: crear la ubicación sin escribir el constructor, comparar dos ubicaciones por sus datos y garantizar que ninguna se modifique después de creada.",
+        "a = Ubicacion(\"Mitre 100\", \"Rosario\")\nb = Ubicacion(\"Mitre 100\", \"Rosario\")\na == b   # True: mismos datos\na.localidad = \"Salta\"   # error: no se puede modificar"),
+    (U, "Ubicacion", "slots"): ("Define cuáles son los únicos campos del objeto (direccion y localidad). Escribir cualquier otro nombre da error en vez de crear un dato de más.",
+        "u = Ubicacion(\"Mitre 100\", \"Rosario\")\nu.piso = 3   # error: ese campo no existe"),
+    (U, "Ubicacion", "__post_init__"): ("Se ejecuta solo, justo después de crear el objeto. Se usa para validar los datos: si algo está mal, el objeto no llega a existir.",
+        "Ubicacion(\"\", \"Rosario\")   # error: falta la dirección"),
+    (A, "_Estado", "atributo de clase"): ("Un dato que se escribe directo en la clase y vale para todos sus objetos; se lee sin crear ninguno.",
+        "_Pendiente.etiqueta   # EstadoAviso.PENDIENTE"),
+    (A, "_Pendiente", "una sola instancia"): ("Se crea un único objeto por estado y se reutiliza. Como no guarda datos del aviso, no hace falta uno nuevo cada vez.",
+        "_ACEPTADO is _ACEPTADO   # siempre el mismo objeto"),
+})
+DECISION.update({
+    (C, "Catalogo", "tuple(cls)"): ("Preguntar directamente `valor in cls` también aceptaba el texto \"inundacion\", y eso deja pasar datos que no son del tipo correcto.",
+        "Usar `valor in cls` directamente.", "Comparar contra los valores reales exige que el dato sea del catálogo, no solo que se parezca."),
+})

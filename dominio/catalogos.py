@@ -12,7 +12,7 @@ class Catalogo(Enum):
 
     @classmethod
     def contiene(cls, valor) -> bool:
-        # `valor in cls` aceptaría también el texto "inundacion" (Python 3.12+),
+        # `valor in cls` aceptaría también el texto "inundacion" como válido;
         # por eso se compara contra los miembros reales.
         return valor in tuple(cls)
 

@@ -56,6 +56,18 @@ def paso_resumen(p):
     return f'<ul class="resumen">{li}</ul>', len(p["puntos"])
 
 
+def _comentarios_arriba(texto):
+    """Pasa «código   # comentario» a dos renglones, para que el ejemplo no se parta al achicar el panel."""
+    salida = []
+    for linea in texto.split("\n"):
+        m = re.match(r"^(\s*)(.*?\S)\s{2,}#\s*(.*)$", linea)
+        if m and not m.group(2).startswith("#"):
+            salida += [f"{m.group(1)}# {m.group(3)}", f"{m.group(1)}{m.group(2)}"]
+        else:
+            salida.append(linea)
+    return "\n".join(salida)
+
+
 def paso_codigo(p):
     e = d.codigo(p["archivo"], p["simbolo"])
     if e is None:
@@ -76,6 +88,7 @@ def paso_codigo(p):
     notas = []
     for i, (_, t, q, w) in enumerate(p["notas"]):
         largo, ejemplo = EXPLICA.get((p["archivo"], p["simbolo"], t), (q, ""))
+        ejemplo = _comentarios_arriba(ejemplo)
         dec = DECISION.get((p["archivo"], p["simbolo"], t))
         if dec is None:
             raise SystemExit(f"Falta la decisión de {p['simbolo']} · {t}")
@@ -280,7 +293,7 @@ svg.rel [data-k]{opacity:0;transition:opacity .35s}svg.rel [data-k].on{opacity:1
 .mult{font:700 14px system-ui;fill:var(--rojo)}.etq{font:600 13px system-ui;fill:#444a73;paint-order:stroke;stroke:#fff;stroke-width:4px}
 .ley{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-top:8px}.ley i{display:inline-block;width:18px;height:0;border-top:2px solid #312e81;vertical-align:middle;margin-right:5px}
 .ley .ld{border-top-style:dashed}.ley .lr{border-top-width:5px}
-pre.ej{margin:6px 0 10px;background:#1b1d33;color:#dfe2f7;border-radius:8px;padding:10px 12px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;user-select:text}
+pre.ej{margin:6px 0 10px;background:#1b1d33;color:#dfe2f7;border-radius:8px;padding:10px 12px;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre;overflow-x:auto;user-select:text}
 .nota .dec{margin-top:10px;padding:10px 12px;background:#f3f2ff;border-left:4px solid var(--ac);border-radius:6px;font-size:15.5px;line-height:1.4}.nota .dh{font:700 12px system-ui;color:var(--ac2);margin-top:8px}.nota .dh:first-child{margin-top:0}.nota .e{font:700 13px system-ui;color:var(--mut);margin-top:12px}
 .nota .fr{color:var(--rojo);font-weight:700}.nota .cod{margin-top:8px;font:14px ui-monospace,monospace;color:var(--ac2)}
 </style></head><body>
