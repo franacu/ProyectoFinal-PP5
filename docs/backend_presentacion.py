@@ -480,6 +480,7 @@ function pintar(){
  $('#count').textContent=(p+1)+' / '+G.length;
  $('#pista').textContent='← → o Espacio para avanzar · Esc vuelve a la lista'+(emb?' · D abre el diagrama':'')+' · F pantalla completa';
  $('#next').textContent=p===G.length-1&&(m.k!=='codigo'||k===m.n)?'Volver a la lista':'Siguiente';
+ $('#prev').textContent=p===0&&(m.k!=='codigo'||k===0)?'Volver a la lista':'Anterior';
  const sel=$('#salto');if(sel.dataset.g!==String(gi)){sel.innerHTML='';G.forEach((x,y)=>{const o=document.createElement('option');o.value=x;o.textContent=(y+1)+' · '+(META[x].a&&META[x].k==='ficha'?META[x].a+': ':'')+META[x].t;sel.append(o)});sel.dataset.g=gi}
  sel.value=i;
  if(m.k==='codigo')pintarCodigo();else ajustarSlide();
@@ -548,7 +549,7 @@ function sig(){
 function atras(){
  if(i<0)return;const m=META[i];
  if(m.k==='codigo'&&k>0){k--;pintar();return}
- const p=G.indexOf(i);if(p>0){i=G[p-1];k=0;pintar()}else mostrarLista();
+ const p=G.indexOf(i);if(p>0){i=G[p-1];const a=META[i];k=a.k==='codigo'?a.n:0;pintar()}else mostrarLista();   // vuelve a la última nota: el mismo camino que sig(), al revés
 }
 function fs(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
 document.addEventListener('keydown',e=>{
