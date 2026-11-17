@@ -98,7 +98,7 @@ ahora = datetime(2026, 11, 20, 10, 0)
 aviso = Aviso("rep1", Ubicacion("Mitre 100", "Rosario"), TipoSituacion.INUNDACION, Gravedad.ALTA, "Calle cortada", ahora)
 aviso.descartar("op1", "Duplicado de otro aviso", ahora)
 aviso.agregar_nota("rep1", "llegó tarde", ahora)"""),
-    ("conclusion", "Cómo se lo explico al profesor", "Cada estado es una clase que sabe qué admite. El Aviso no pregunta «¿qué estado sos?»: le pasa la operación y el estado responde. No hay un `if` que se pueda olvidar, y la cátedra pidió justamente delegar en el estado."),
+    ("conclusion", "Cómo se lo explico al profesor", "Cada estado es una clase que sabe qué admite. El Aviso no pregunta «¿qué estado sos?»: le pasa la operación y el estado responde. No hay un `if` que se pueda olvidar, y preguntar el tipo con `if` rompe con POO: cada objeto debe responder por sí mismo."),
 ]),
 "fallar_antes": dict(titulo="Fallar antes de modificar", bloques=[
     ("historia", "Situación", "El operador acepta un aviso pero se equivoca al cargar la gravedad (escribe 5)."),
