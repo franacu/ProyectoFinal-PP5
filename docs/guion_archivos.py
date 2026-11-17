@@ -94,10 +94,18 @@ P += [
  paso("val_ubicacion", 0, "valores.py: Ubicacion", VAL, R(VAL, "@dataclass", "raise DatoDeAvisoInvalido", antes=0),
       "§7.1: todo aviso informa dónde ocurre la situación.",
       n("@dataclass", "Inmutable y con campos cerrados",
-        "@dataclass arma el constructor. frozen=True: una vez creada no se puede modificar. slots=True: el objeto solo guarda los campos declarados (dirección y localidad); no se le agregan atributos por error y ocupa menos memoria.",
-        "Una ubicación es un valor: dos con los mismos datos son lo mismo, y nadie la cambia a escondidas."),
+        "`@dataclass` arma el constructor a partir de los campos declarados. Los dos parámetros agregan:\n"
+        "\n"
+        "1. `frozen=True`: una vez creada, la ubicación **no se puede modificar**,\n"
+        "2. `slots=True`: el objeto guarda **solo los campos declarados** (dirección y localidad); no se le pueden agregar atributos por error y ocupa menos memoria.",
+        "Una ubicación es un valor: dos con los mismos datos son la misma, y nadie la cambia a escondidas."),
       n("def __post_init__", "__post_init__: validar al crearse",
-        "Se ejecuta justo después del constructor y rechaza dirección o localidad vacías con DatoDeAvisoInvalido. `raise` lanza el error.",
+        "Se ejecuta justo después del constructor. Exige dos cosas:\n"
+        "\n"
+        "1. una **dirección** con contenido,\n"
+        "2. una **localidad** con contenido.\n"
+        "\n"
+        "Si falta cualquiera, `raise` lanza DatoDeAvisoInvalido.",
         "Una ubicación inválida nunca llega a existir.")),
 ]
 
@@ -237,7 +245,12 @@ P += [
         "La emergencia sigue abierta y admite nuevas misiones.",
         "§7.2 y PV16: para cerrar hace falta al menos una misión finalizada con éxito."),
       n("class RegistroInvalido", "RegistroInvalido: una constancia incompleta",
-        "Se lanza cuando un registro del historial no tiene **actor**, **fecha y hora**, una **operación del catálogo** o al menos un **recurso afectado**.",
+        "Se lanza cuando un registro del historial no tiene alguna de estas cuatro cosas:\n"
+        "\n"
+        "1. un **actor** (quién),\n"
+        "2. una **fecha y hora** (cuándo),\n"
+        "3. una **operación** del catálogo (qué),\n"
+        "4. al menos un **recurso afectado** (sobre qué).",
         "§9: cada registro identifica quién, cuándo, qué operación y sobre qué recursos. Un registro incompleto no se guarda.")),
  paso("his_registro", 1, "historial.py: Operacion y Registro", HIS, R(HIS, "from __future__", "return dict(self.detalle).get(clave)"),
       "§9: cada cambio deja constancia de quién hizo qué, cuándo y sobre qué recursos.",
@@ -249,7 +262,14 @@ P += [
         "| rep-1 | 10:00 | AVISO_REGISTRADO | av-1 |",
         "Leyendo el historial se sabe qué pasó, siempre con el mismo nombre (§9)."),
       n("@dataclass(frozen=True, slots=True)", "Registro: quién, cuándo y qué",
-        "Un registro es inmutable, igual que Ubicacion. `tuple[str, ...]` es una tupla de textos de cualquier largo; `detalle` guarda pares (clave, texto) y su `= ()` es el valor por defecto: tupla vacía."),
+        "Un registro es **inmutable**, igual que Ubicacion. Guarda cinco campos:\n"
+        "\n"
+        "1. `actor_id`: quién hizo la operación,\n"
+        "2. `fecha_hora`: cuándo,\n"
+        "3. `operacion`: qué operación del catálogo,\n"
+        "4. `recursos`: sobre qué ids; `tuple[str, ...]` es una tupla de textos de cualquier largo,\n"
+        "5. `detalle`: datos extra como pares (clave, texto); `= ()` lo hace opcional, por defecto vacío.",
+        "Cada constancia del historial tiene siempre la misma forma y no se puede alterar (§9)."),
       n("def __post_init__", "Validar el registro",
         "Igual que en Ubicacion, `__post_init__` valida apenas se crea el registro. Exige cuatro cosas:\n\n"
         "1. un **actor** (quién),\n"
@@ -286,15 +306,37 @@ P += [
  paso("avi_valores", 2, "aviso.py: Nota y Descarte", AVI, R(AVI, "class Nota", "El descarte necesita fecha", antes=1),
       "§2.1 y §7.1: un aviso puede recibir notas y puede descartarse con justificación.",
       n("class Nota", "Nota: autor, texto y fecha",
-        "Un valor inmutable que se valida al nacer: no existe una nota sin autor, vacía o sin fecha. Si falta algo lanza NotaInvalida."),
+        "Un **valor inmutable** (`frozen`) que se valida apenas se crea, en `__post_init__`. Exige tres cosas:\n"
+        "\n"
+        "1. un **autor** (quién la escribe),\n"
+        "2. un **texto** con contenido (qué dice),\n"
+        "3. una **fecha y hora** (cuándo).\n"
+        "\n"
+        "Si falta cualquiera, lanza NotaInvalida.",
+        "No puede existir una nota sin autor, vacía o sin fecha (R2)."),
       n("class Descarte", "Descarte: operador, justificación y fecha",
-        "Mismo molde. Valida primero la justificación porque es la regla central: descartar sin explicar no existe y falla con su error propio, JustificacionVacia.")),
+        "Mismo molde que Nota: un **valor inmutable** que se valida al crearse. Exige tres cosas, en este orden:\n"
+        "\n"
+        "1. una **justificación** con contenido (por qué se descarta) → si falta, JustificacionVacia,\n"
+        "2. un **operador** (quién descarta) → si falta, DescarteInvalido,\n"
+        "3. una **fecha y hora** (cuándo) → si falta, DescarteInvalido.\n"
+        "\n"
+        "La justificación va primero porque es la regla central: descartar sin explicar no existe.",
+        "No puede existir un descarte sin explicación, sin responsable o sin fecha (R4).")),
  paso("avi_estados", 2, "aviso.py: los estados del aviso", AVI, R(AVI, "class EstadoAviso", "_ESTADO_POR_ETIQUETA ="),
       "Pendiente, Aceptado y Descartado son clases; el aviso les delega en vez de usar un if.",
       n("class EstadoAviso(Enum)", "EstadoAviso: el nombre público del estado",
         "Es la etiqueta que se muestra y se guarda (pendiente, aceptado, descartado). El objeto estado queda privado: afuera solo sale este nombre."),
       n("class _Estado(ABC)", "_Estado: las preguntas que todo estado responde",
-        "ABC marca una clase abstracta: no se puede crear sola. @abstractmethod obliga a cada subclase a implementar el método. El guion bajo inicial (_Estado) avisa que es interno del módulo."),
+        "`ABC` marca una **clase abstracta**: no se puede crear sola. `@abstractmethod` obliga a cada subclase a implementar cuatro métodos:\n"
+        "\n"
+        "1. `permitir_nota()`: ¿admite notas?,\n"
+        "2. `descartar()`: ¿se puede descartar?,\n"
+        "3. `aceptar()`: ¿se puede aceptar?,\n"
+        "4. `validar_descarte()`: ¿el descarte es coherente con este estado?\n"
+        "\n"
+        "El guion bajo inicial (`_Estado`) indica que es una clase **privada** del módulo.",
+        "Si se agrega un estado y le falta responder alguna pregunta, Python no deja crearlo."),
       n("class _Pendiente", "Pendiente, Aceptado y Descartado",
         "Las tres clases responden las **mismas cuatro preguntas** que define _Estado, pero cada una contesta distinto:\n\n"
         "- **Pendiente**: el único que admite operaciones. Deja agregar notas, y descartar o aceptar le devuelve el estado siguiente.\n"
@@ -334,7 +376,13 @@ P += [
         "Un texto de solo espacios ('     ') quedaría vacío; por eso `_validar_datos` lo rechaza antes con hay_texto.",
         "Se guarda siempre un texto limpio y nadie puede alterar los datos del aviso desde afuera."),
       n("self._estado: _Estado = _PENDIENTE", "Todo aviso nace pendiente",
-        "Se guarda el estado como objeto (anotado `: _Estado`). Las listas de notas y registros empiezan vacías y el descarte en None (R1)."),
+        "Al terminar el constructor, el aviso queda así:\n"
+        "\n"
+        "1. **estado**: `_PENDIENTE`, guardado como objeto (anotado `: _Estado`),\n"
+        "2. **notas**: lista vacía,\n"
+        "3. **descarte**: None, todavía no hay,\n"
+        "4. **registros**: la lista que se arma en la línea siguiente.",
+        "Regla R1: un aviso recién registrado está pendiente, sin notas y sin descarte."),
       n("Registro.de(reportante_id", "Nace con su primer registro",
         "Al escribir `self._registros = [ ... ]` se crea una lista con **un único elemento**: el objeto que devuelve `Registro.de(...)`.\n\n"
         "Ese registro se construye con:\n\n"
@@ -347,16 +395,41 @@ P += [
  paso("avi_operaciones", 2, "aviso.py: agregar_nota y descartar", AVI, R(AVI, "def agregar_nota", "return nota")[0:1] + (R(AVI, "def descartar(self, operador_id", "self._registros.append(registro)")[1],),
       "Cada operación pregunta, valida, arma lo nuevo y recién al final modifica.",
       n("self._estado.permitir_nota()", "agregar_nota(): preguntar y validar",
-        "Primero el estado (¿admite notas?), después que el autor sea el reportante (NotaDeOtroAutor) y después se crea la Nota, que se valida sola. Todo antes de tocar el aviso."),
+        "Antes de tocar el aviso, comprueba tres cosas en orden:\n"
+        "\n"
+        "1. **el estado**: `self._estado.permitir_nota()` lanza AvisoNoPendiente si el aviso ya fue evaluado,\n"
+        "2. **el autor**: si no es el reportante del aviso, lanza NotaDeOtroAutor,\n"
+        "3. **la nota**: al crear `Nota(...)` se valida sola (autor, texto y fecha).\n"
+        "\n"
+        "Después arma el registro NOTA_AGREGADA. Si cualquier paso falla, el aviso queda intacto.",
+        "Reglas R2, R5 y R6: solo se agregan notas válidas, del reportante, a un aviso pendiente."),
       n("self._notas.append(nota)", "Modificar al final",
-        "Recién acá se agregan la nota y su registro, y se devuelve la nota. Si algo falló antes, el aviso quedó intacto."),
+        "Recién acá cambia el aviso, cuando ya no puede fallar nada:\n"
+        "\n"
+        "1. se agrega la nota a la lista,\n"
+        "2. se agrega su registro al historial,\n"
+        "3. se devuelve la nota creada.",
+        "Regla R6: una operación rechazada no deja cambios a medias."),
       n("def descartar", "descartar(): el mismo orden",
-        "Pregunta al estado, crea el Descarte (valida la justificación), arma el registro y cambia las tres cosas juntas al final: descarte, estado y registros.")),
+        "Mismo orden que agregar_nota: primero todo lo que puede fallar, al final los cambios.\n"
+        "\n"
+        "1. **pregunta al estado**: `self._estado.descartar()` devuelve el estado siguiente o lanza AvisoNoPendiente,\n"
+        "2. **crea el Descarte**, que valida la justificación, el operador y la fecha,\n"
+        "3. **arma el registro** AVISO_DESCARTADO con la justificación.\n"
+        "\n"
+        "Recién entonces cambia tres cosas juntas: el descarte, el estado y los registros.",
+        "Reglas R4, R5 y R6: un descarte inválido o repetido no deja el aviso a medio descartar.")),
  paso("avi_aceptar", 2, "aviso.py: aceptar", AVI, R(AVI, "def aceptar(self, operador_id", "return emergencia"),
       "§2.2 y §7.1: aceptar origina una única emergencia.",
       n("siguiente = self._estado.aceptar()", "aceptar(): origina la emergencia",
-        "Mismo orden: pregunta al estado, construye la Emergencia (que valida tipo, gravedad y operador), arma el registro y recién entonces cambia el estado. Devuelve la emergencia creada.",
-        "Los datos del aviso no se pisan: la emergencia guarda los que el operador confirmó.")),
+        "Mismo orden que descartar:\n"
+        "\n"
+        "1. **pregunta al estado**: `self._estado.aceptar()` devuelve el estado siguiente o lanza AvisoNoPendiente,\n"
+        "2. **construye la Emergencia**, que valida tipo, gravedad, operador y fecha,\n"
+        "3. **arma el registro** AVISO_ACEPTADO.\n"
+        "\n"
+        "Recién entonces cambia el estado, guarda el registro y **devuelve la emergencia** creada.",
+        "Los datos del aviso no se pisan: la emergencia guarda el tipo y la gravedad que el operador confirmó (§2.2, §7.1).")),
  paso("avi_lectura", 2, "aviso.py: lectura del aviso", AVI, R(AVI, "def id(self)", "return tuple(self._registros)", antes=1),
       "Todo se puede leer y nada se puede asignar desde afuera.",
       n("@property", "@property: leer sin poder escribir",
@@ -439,7 +512,13 @@ P += [
       n("class Vehiculo(ABC)", "Una clase abstracta con propiedad abstracta",
         "`@property` junto con `@abstractmethod` obliga a cada subclase a definir su categoría. Vehiculo no se instancia directamente."),
       n("def __post_init__", "Validar id y condición",
-        "Igual que en Ubicacion: se valida apenas se crea. La condición tiene que ser un miembro del catálogo."),
+        "Igual que en Ubicacion: `__post_init__` valida apenas se crea el vehículo. Exige dos cosas:\n"
+        "\n"
+        "1. un **id** con contenido,\n"
+        "2. una **condición** que pertenezca al catálogo.\n"
+        "\n"
+        "Si falta cualquiera, lanza RecursoInvalido.",
+        "No existe un vehículo sin identificación o con una condición inventada."),
       n("def operativo", "operativo: una propiedad calculada",
         "Igual que en Equipo: no guarda un dato, lo **deduce**. Usa `is` para preguntar si la condición del vehículo es exactamente el objeto OPERATIVO del Enum.\n\n"
         "- Si lo es, devuelve **True**: el vehículo puede salir a una misión.\n"
