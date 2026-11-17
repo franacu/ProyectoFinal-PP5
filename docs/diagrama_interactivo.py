@@ -472,6 +472,9 @@ button,.btn,a.btn{font:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--foco);outline-offset:2px}
 main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(400px,1fr)}
 @media(max-width:900px){main{grid-template-columns:1fr;grid-auto-rows:minmax(300px,1fr)}}
+main.sin-panel{grid-template-columns:minmax(0,1fr)}main.sin-panel #der{display:none}
+#tp{display:inline-flex;align-items:center;gap:8px}#tp svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+#tp[aria-expanded=false] svg path{display:none}
 #izq{display:flex;flex-direction:column;min-height:0;position:relative}
 .barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 14px 0;padding:8px 10px;background:var(--card);border-radius:14px;box-shadow:var(--sh1);position:relative;z-index:2}
 .barra .z{min-width:52px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
@@ -550,6 +553,7 @@ pre .l::before{content:attr(data-n);display:inline-block;width:3.4em;padding-rig
 <button class="tab" role="tab" id="t-c" aria-controls="v-c" aria-selected="true">Modelo de clases</button>
 <button class="tab" role="tab" id="t-e" aria-controls="v-e" aria-selected="false" tabindex="-1">Estados de la misión</button>
 <button class="tab" role="tab" id="t-l" aria-controls="v-l" aria-selected="false" tabindex="-1">Vista en lista</button></div>
+<button class="tool" id="tp" aria-controls="der" aria-expanded="true" title="Ocultar o mostrar el panel de código (tecla C)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg><span>Ocultar código</span></button>
 <button class="tool" id="irp" hidden style="min-height:38px;padding:5px 14px">▶ Presentación</button>
 </header>
 <main>
@@ -571,7 +575,7 @@ pre .l::before{content:attr(data-n);display:inline-block;width:3.4em;padding-rig
 <div id="panel" tabindex="-1"><h2>Elegí un elemento</h2>
 <p class="vacio">Clickeá (o con el teclado, Enter) una clase, un atributo, una operación, un estado o una flecha de transición para ver su código real.
 Al pasar el mouse por una clase aparece la pestañita <strong>Ver en VS Code</strong>.</p>
-<p class="meta">Teclado: Tab recorre las clases · ↓ entra a sus atributos y operaciones · ↑ ↓ se mueven · Enter muestra el código · V abre VS Code · Esc vuelve a la clase.</p>
+<p class="meta">Teclado: Tab recorre las clases · ↓ entra a sus atributos y operaciones · ↑ ↓ se mueven · Enter muestra el código · V abre VS Code · Esc vuelve a la clase · C oculta o muestra este panel.</p>
 <p class="meta">Encabezado oscuro = raíz de agregado · borde punteado = clase abstracta · ◆ composición · ▷ herencia · ⇢ dependencia.</p></div>
 <div id="estado" role="status" aria-live="polite"></div></aside></main>
 <script>
@@ -620,7 +624,14 @@ function relaciones(c){const r=REL.filter(x=>x.o===c||x.d===c);if(!r.length)retu
   const v=x.tipo==='h'?(sale?'hereda de':'es heredada por'):(sale?(x.et||TXT[x.tipo]):(x.et?x.et+' (entrante)':'recibe de'));
   const card=(x.mo||x.md)?(sale?x.mo+' → '+x.md:x.md+' ← '+x.mo):'';
   return '<li><button class="lk-rel" data-ir="'+esc(otro)+'"><span class="v">'+esc(v)+'</span><span class="n">'+esc(otro)+'</span><span class="c2">'+esc(card)+'</span></button></li>'}).join('')+'</ul>'}
+const tp=$('#tp'),principal=document.querySelector('main');
+function panelVisible(v){principal.classList.toggle('sin-panel',!v);tp.setAttribute('aria-expanded',v);
+ tp.querySelector('span').textContent=v?'Ocultar código':'Mostrar código';try{localStorage.setItem('crce-panel',v?'1':'0')}catch(e){}}
+tp.onclick=()=>panelVisible(principal.classList.contains('sin-panel'));
+try{if(localStorage.getItem('crce-panel')==='0')panelVisible(false)}catch(e){}
+addEventListener('keydown',e=>{if((e.key==='c'||e.key==='C')&&!e.metaKey&&!e.ctrlKey&&!(e.target.closest&&e.target.closest('input,textarea'))){e.preventDefault();tp.click()}});
 function mostrar(el){
+ if(principal.classList.contains('sin-panel'))panelVisible(true);
  marcar(el.closest('.mi,.trans,.nodo'));
  let h;
  if(el.dataset.k2!==undefined){const op=el.dataset.k.split('.')[1];
