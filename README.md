@@ -4,7 +4,12 @@ TP Integrador 2026 · Paradigmas de Programación V · FIE-UNDEF
 
 Dominio en Python puro (solo biblioteca estándar), orientado a objetos.
 
+**Ver en línea (presentación y diagramas):** https://franacu.github.io/ProyectoFinal-PP5/
+
 ## Ver el proyecto en tu computadora (paso a paso)
+
+Si solo querés mirarlo, no hace falta instalar nada: abrí https://franacu.github.io/ProyectoFinal-PP5/
+(en esa versión los enlaces al enunciado y a VS Code no funcionan). Para correrlo en tu máquina:
 
 Todavía no hay servidor web: lo que se ve es la **presentación y los diagramas interactivos**, que son
 páginas HTML estáticas generadas a partir del código real. No hace falta instalar nada más que Python.
