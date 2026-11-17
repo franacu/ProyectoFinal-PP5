@@ -48,4 +48,5 @@ addEventListener('keydown',e=>{if(e.key==='p')modo('presentacion');else if(e.key
 fp.addEventListener('load',()=>fp.contentWindow.focus());
 </script></body></html>"""
 (AQUI / "crce.html").write_text(HTML, encoding="utf-8")
-print("docs/crce.html listo")
+(AQUI / "index.html").write_text(HTML, encoding="utf-8")  # GitHub Pages sirve index.html en la raíz
+print("docs/crce.html e index.html listos")

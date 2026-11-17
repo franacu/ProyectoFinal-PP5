@@ -1,0 +1,35 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRCE · Presentación y diagramas</title><style>
+:root{--bg:#f1f2f7;--ink:#161a2b;--ac:#4338ca;--ac2:#312e81;--mut:#5b6078}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{display:flex;font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+nav{width:216px;flex:none;background:#1b1d33;color:#dfe2f7;display:flex;flex-direction:column;padding:18px 12px;gap:6px;transition:width .2s}
+nav.min{width:64px}nav.min .t,nav.min .ayuda,nav.min h1 small{display:none}
+nav h1{font-size:17px;margin:0 6px 14px;color:#fff}nav h1 small{display:block;font-weight:400;color:#9a9fd0;font-size:12px}
+nav button{display:flex;gap:10px;align-items:center;width:100%;padding:11px 12px;border:0;border-radius:10px;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
+nav button:hover{background:#2a2d52}nav button[aria-pressed=true]{background:var(--ac);color:#fff;box-shadow:0 4px 14px rgba(67,56,202,.45)}
+nav button:focus-visible{outline:3px solid #ffb454;outline-offset:2px}
+.ico{width:22px;text-align:center;font-size:18px}.sp{flex:1}.ayuda{font-size:12px;color:#9a9fd0;padding:8px 6px;line-height:1.6}
+kbd{background:#2a2d52;border-radius:4px;padding:1px 6px;font:12px ui-monospace,monospace;color:#fff}
+main{flex:1;position:relative}iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--bg)}
+iframe[hidden]{display:none}
+@media (max-width:760px){nav{width:64px}nav .t,nav .ayuda,nav h1 small{display:none}}
+</style></head><body>
+<nav aria-label="Modo"><h1>CRCE<small>Coordinación de Emergencias</small></h1>
+<button id="bp" aria-pressed="true"><span class="ico">▶</span><span class="t">Presentación</span></button>
+<button id="bd" aria-pressed="false"><span class="ico">◇</span><span class="t">Diagramas</span></button>
+<span class="sp"></span>
+<div class="ayuda"><kbd>P</kbd> presentación<br><kbd>D</kbd> diagramas<br><kbd>M</kbd> achicar menú<br>En la presentación: <kbd>Espacio</kbd> avanza</div>
+<button id="bm" aria-label="Achicar o agrandar el menú"><span class="ico">⇔</span><span class="t">Menú</span></button></nav>
+<main><iframe id="fp" src="presentar.html" title="Presentación"></iframe><iframe id="fd" src="diagrama.html" title="Diagramas" hidden></iframe></main>
+<script>
+const fp=document.getElementById('fp'),fd=document.getElementById('fd'),bp=document.getElementById('bp'),bd=document.getElementById('bd');
+let cargado=false;fd.addEventListener('load',()=>cargado=true);
+function modo(m,clase){const d=m==='diagrama';fp.hidden=d;fd.hidden=!d;bp.setAttribute('aria-pressed',!d);bd.setAttribute('aria-pressed',d);
+ const f=d?fd:fp;setTimeout(()=>{f.focus();f.contentWindow&&f.contentWindow.focus();if(d&&clase)f.contentWindow.postMessage({irAClase:clase},'*')},60)}
+bp.onclick=()=>modo('presentacion');bd.onclick=()=>modo('diagrama');
+document.getElementById('bm').onclick=()=>document.querySelector('nav').classList.toggle('min');
+addEventListener('message',e=>{const m=e.data||{};if(m.modo)modo(m.modo,m.clase)});
+addEventListener('keydown',e=>{if(e.key==='p')modo('presentacion');else if(e.key==='d')modo('diagrama');else if(e.key==='m')document.querySelector('nav').classList.toggle('min')});
+fp.addEventListener('load',()=>fp.contentWindow.focus());
+</script></body></html>
