@@ -103,24 +103,142 @@ P += [
 
 # ═════════ 2 · ERRORES E HISTORIAL ═════════
 P += [
- paso("err_base", 1, "errores.py: un error por regla", ERR, R(ERR, "class ErrorDeDominio", "class JustificacionVacia", antes=0)[0:1] + (R(ERR, "class JustificacionVacia", '"""Descartar exige')[1],),
-      "Cada regla del negocio que se viola lanza un error con nombre propio.",
+ paso("err_base", 1, "errores.py: la base y los errores del aviso", ERR, R(ERR, "class ErrorDeDominio", "Aceptar exige operador"),
+      "Cada regla del negocio que se viola lanza un error con nombre propio. Primero, la base común y los errores del aviso (§2.1, §7.1).",
       n("class ErrorDeDominio", "ErrorDeDominio: la base de todos los rechazos",
-        "Hereda de Exception, la clase de errores de Python. Todos los errores del negocio cuelgan de esta base: con un solo except se atrapan todos los rechazos del dominio."),
-      n("class DatoDeAvisoInvalido", "Un error por cada motivo",
-        "La clase no tiene código: su valor es el nombre y el texto explicativo. Los tests y la API distinguen un rechazo de otro por su tipo, no por el mensaje."),
-      n("class JustificacionVacia", "Herencia entre errores",
-        "JustificacionVacia es un caso más específico de DescarteInvalido: se puede atrapar el caso puntual o el grupo completo.")),
- paso("err_asignacion", 1, "errores.py: motivos de rechazo de una asignación", ERR, R(ERR, "class AsignacionRechazada", '"""Un jefe solo opera'),
-      "§8.2: si una unidad no puede recibir una misión, el error dice por qué.",
-      n("class AsignacionRechazada", "Una familia de motivos",
-        "UnidadNoHabilitada, UnidadOcupada, VehiculoIncompatible, PersonalInsuficiente y EquipamientoInsuficiente cuelgan de AsignacionRechazada: cada una dice exactamente por qué no se asignó."),
-      n("class UnidadOcupada", "Herencia múltiple",
-        "UnidadOcupada hereda de dos clases a la vez: es un rechazo de asignación y además un caso de unidad comprometida. Se la puede atrapar como cualquiera de las dos.")),
- paso("err_resto", 1, "errores.py: el resto de las reglas", ERR, R(ERR, "class MisionInvalida", '"""Un registro histórico'),
-      "Misiones, emergencias e historial también tienen sus errores.",
-      n("class MisionEnEstadoInvalido", "Una excepción por regla",
-        "MisionInvalida, MisionIncompatible, MisionEnEstadoInvalido, MisionSinConcluir, EmergenciaCerrada, SinMisionExitosa, RegistroInvalido… Así los tests verifican la regla exacta y no un ValueError genérico.")),
+        "Hereda de **Exception**, la clase de errores de Python, y no agrega código: su función es **agrupar**.\n\n"
+        "Todos los errores del negocio heredan de ella, así que con un solo `except ErrorDeDominio` se atrapan todos los rechazos del dominio, sin confundirlos con fallas técnicas de Python.",
+        "La futura API podrá traducir cualquier rechazo del negocio a una respuesta HTTP clara con una sola regla."),
+      n("class DatoDeAvisoInvalido", "DatoDeAvisoInvalido: un dato del aviso falta o no vale",
+        "Se lanza al **crear un aviso** cuando falta un dato obligatorio o no pertenece al catálogo: reportante, ubicación, tipo de situación, gravedad, descripción o fecha. "
+        "También cuando una ubicación no tiene dirección o localidad.\n\n"
+        "Ejemplo: registrar un aviso con descripción '   ' o con gravedad 'altísima'.",
+        "Regla R1: un aviso nace completo o no nace."),
+      n("class NotaInvalida", "NotaInvalida: una nota incompleta",
+        "Se lanza cuando una nota no tiene **autor**, **texto** o **fecha y hora**.\n\n"
+        "Ejemplo: `aviso.agregar_nota('rep-1', '', fecha)`.",
+        "Regla R2: cada nota conserva autor, fecha y hora."),
+      n("class NotaDeOtroAutor", "NotaDeOtroAutor: la nota no la escribe el reportante",
+        "Se lanza cuando alguien que **no es el reportante del aviso** intenta agregarle una nota.\n\n"
+        "Ejemplo: el reportante rep-2 intenta comentar un aviso de rep-1.",
+        "§2.1: solo su reportante puede agregar notas. La regla la decide el aviso, que conoce a su reportante."),
+      n("class DescarteInvalido", "DescarteInvalido: un descarte incompleto",
+        "Se lanza cuando el descarte no tiene **operador** o **fecha y hora**.\n\n"
+        "Es además la base de JustificacionVacia: agrupa todo lo que puede faltarle a un descarte.",
+        "Regla R4: el descarte deja constancia de quién lo hizo y cuándo."),
+      n("class JustificacionVacia", "JustificacionVacia: descartar o rechazar sin explicar",
+        "Es un caso **más específico** de DescarteInvalido (hereda de él). Se lanza cuando la justificación está vacía o tiene solo espacios.\n\n"
+        "Se usa en dos lugares:\n\n"
+        "- El operador **descarta un aviso** sin justificación (R4).\n"
+        "- El jefe **rechaza una misión** sin justificación (§2.3).",
+        "Se puede atrapar el caso puntual (JustificacionVacia) o todo el grupo (DescarteInvalido)."),
+      n("class AvisoNoPendiente", "AvisoNoPendiente: el aviso ya fue evaluado",
+        "Se lanza cuando se intenta operar sobre un aviso que **ya no está pendiente**, es decir, aceptado o descartado:\n\n"
+        "- agregarle una nota,\n"
+        "- descartarlo otra vez,\n"
+        "- aceptarlo después de descartado, o aceptarlo dos veces.\n\n"
+        "Lo lanzan los estados _Aceptado y _Descartado.",
+        "Regla R5 y §7.1: un aviso se evalúa una sola vez y un aceptado origina una única emergencia."),
+      n("class AceptacionInvalida", "AceptacionInvalida: aceptar con datos incompletos",
+        "Se lanza al **aceptar un aviso** cuando la emergencia que se origina queda incompleta: falta el operador o la fecha, o el tipo y la gravedad confirmados están fuera de catálogo.\n\n"
+        "Ejemplo: aceptar confirmando una gravedad que no existe.",
+        "§2.2: al aceptar, el operador confirma o corrige tipo y gravedad; esos datos tienen que ser válidos.")),
+ paso("err_recursos", 1, "errores.py: recursos y unidades", ERR, R(ERR, "class RecursoInvalido", "no se asigna ni se modifica"),
+      "§5: errores de las personas, vehículos, equipos, bases y unidades.",
+      n("class RecursoInvalido", "RecursoInvalido: un recurso mal cargado",
+        "Se lanza cuando una **persona, vehículo, equipo o unidad** tiene datos incompletos o incoherentes.\n\n"
+        "Ejemplos:\n\n"
+        "- una persona sin nombre o sin competencias,\n"
+        "- un transporte con capacidad 0,\n"
+        "- un equipo con una categoría fuera de catálogo,\n"
+        "- una unidad o una base sin identificación,\n"
+        "- una unidad sin jefe o sin vehículo, o retirar al jefe de su unidad.",
+        "Es el error más usado del dominio: ningún recurso inválido llega a formar parte de una unidad."),
+      n("class RecursoDuplicado", "RecursoDuplicado: un recurso en dos lugares",
+        "Se lanza cuando una **persona, vehículo o equipo ya pertenece a otra unidad**, o cuando se registra dos veces la misma base o unidad.\n\n"
+        "Ejemplo: incorporar a Ana a la unidad U2 cuando ya integra U1.",
+        "§5.2: una misma persona, vehículo o elemento de equipamiento no puede formar parte de dos unidades a la vez. Lo controla la Flota."),
+      n("class NoEncontrado", "NoEncontrado: se pidió algo que no existe",
+        "Se lanza cuando se busca una **unidad, base, misión o recurso** por su id y no está.\n\n"
+        "Ejemplos: asignar la unidad 'U99', o operar sobre una misión que no pertenece a esa emergencia.",
+        "La futura API lo traduce en un 404: el pedido es correcto, pero el recurso no existe."),
+      n("class UnidadComprometida", "UnidadComprometida: la unidad está ocupada en una misión",
+        "Se lanza cuando se intenta **modificar la composición** de una unidad (personal, vehículo, equipo o condición) mientras está **reservada o ejecutando una misión**.\n\n"
+        "Ejemplo: el responsable de recursos intenta cambiar el vehículo de una unidad asignada (PV14).\n\n"
+        "También se lanza si se intenta **liberar** una unidad de una misión con la que no está comprometida.",
+        "§8.4: una unidad no puede modificarse administrativamente mientras está comprometida.")),
+ paso("err_asignacion", 1, "errores.py: motivos de rechazo de una asignación", ERR, R(ERR, "class AsignacionRechazada", "Un jefe solo opera"),
+      "§8.2: si una unidad no puede recibir una misión, el error dice exactamente por qué.",
+      n("class AsignacionRechazada", "AsignacionRechazada: la familia de los rechazos",
+        "Es la **base** de todos los motivos por los que una unidad no puede recibir una misión. No se lanza sola: se lanza siempre uno de sus hijos.\n\n"
+        "Corresponde a la lista de verificaciones del §8.2: si alguna falla, la asignación se rechaza indicando el motivo.",
+        "Se pueden atrapar todos los rechazos de asignación juntos, o uno en particular."),
+      n("class UnidadNoHabilitada", "UnidadNoHabilitada: en mantenimiento o fuera de servicio",
+        "Se lanza cuando la unidad elegida está **en mantenimiento** o **fuera de servicio**.\n\n"
+        "Ejemplo: asignar una misión a una unidad que el responsable de recursos declaró en mantenimiento.",
+        "§8.4: solo las unidades habilitadas pueden recibir asignaciones."),
+      n("class UnidadOcupada", "UnidadOcupada: ya tiene otra misión",
+        "Se lanza cuando la unidad **ya tiene otra misión** asignada o en ejecución.\n\n"
+        "Hereda de **dos clases** (herencia múltiple): es un rechazo de asignación y también un caso de unidad comprometida. Se la puede atrapar como cualquiera de las dos.",
+        "PV10: la segunda asignación se rechaza sin alterar la primera."),
+      n("class VehiculoIncompatible", "VehiculoIncompatible: el vehículo no sirve",
+        "Se lanza en tres situaciones:\n\n"
+        "- el vehículo es de **otra categoría** (una ambulancia para una evacuación),\n"
+        "- **no alcanza la capacidad** (6 plazas para evacuar a 8 personas, PV06),\n"
+        "- está **fuera de servicio**.\n\n"
+        "Lo lanza el propio vehículo al responder si sirve para la misión.",
+        "PV06 y PV08: el mensaje dice cuál de los tres casos ocurrió."),
+      n("class PersonalInsuficiente", "PersonalInsuficiente: faltan personas para los puestos",
+        "Se lanza cuando **no existe un reparto de personas distintas** que cubra todos los puestos de la misión.\n\n"
+        "Ejemplo: un rescate necesita un conductor y dos rescatistas, pero la unidad tiene un conductor y un solo rescatista. Una persona con dos competencias no cuenta dos veces.",
+        "PV07: se verifica que exista una distribución, sin asignar nominalmente cada puesto."),
+      n("class EquipamientoInsuficiente", "EquipamientoInsuficiente: falta el equipo operativo",
+        "Se lanza cuando la unidad **no tiene al menos un elemento operativo** de la categoría que exige la misión (equipo de rescate o sanitario).\n\n"
+        "Un equipo fuera de servicio no cuenta.",
+        "PV09: con el equipo roto se rechaza; al restablecerlo, la asignación se acepta."),
+      n("class NoEsJefeDeLaUnidad", "NoEsJefeDeLaUnidad: no es su misión",
+        "Se lanza cuando un jefe intenta **iniciar, rechazar, registrar novedades o finalizar** una misión que no está asignada a **su propia unidad**, o una misión que no tiene unidad.\n\n"
+        "No hereda de AsignacionRechazada: no es un problema de la unidad, sino de quién intenta operar.",
+        "§2.3 y PV12: un jefe solo opera sobre las misiones de su unidad.")),
+ paso("err_mision", 1, "errores.py: misiones", ERR, R(ERR, "class MisionInvalida", "Finalizar exige resultado"),
+      "§6 y §8: errores propios de la misión y de su ciclo de vida.",
+      n("class MisionInvalida", "MisionInvalida: una misión mal creada",
+        "Se lanza al **crear una misión** sin objetivo, o una evacuación con una cantidad de personas que no es un entero positivo. "
+        "También cuando una novedad no tiene autor, texto o fecha.\n\n"
+        "Ejemplo: crear una evacuación de 0 personas.",
+        "Una misión nace con lo que necesita para poder verificarse después."),
+      n("class MisionIncompatible", "MisionIncompatible: ese tipo no corresponde a la situación",
+        "Se lanza cuando el **tipo de misión no está permitido** para el tipo de situación de la emergencia, según la tabla del §6.4.\n\n"
+        "Ejemplo: crear una evacuación para un accidente vial.",
+        "PV05: la misión se rechaza; rescate y asistencia sanitaria sí se admiten."),
+      n("class MisionEnEstadoInvalido", "MisionEnEstadoInvalido: esa operación no corresponde al estado",
+        "Se lanza cuando se pide una **transición no admitida** desde el estado actual de la misión.\n\n"
+        "Ejemplos:\n\n"
+        "- iniciar una misión pendiente (no tiene unidad),\n"
+        "- reasignar o rechazar una misión en ejecución (PV13),\n"
+        "- iniciar una misión cancelada (PV15),\n"
+        "- reabrir una finalizada.\n\n"
+        "Lo arma cada estado con el nombre de la operación rechazada.",
+        "§8.1: no se admiten transiciones arbitrarias, y una misión finalizada o cancelada no se reabre."),
+      n("class MisionSinConcluir", "MisionSinConcluir: todavía hay misiones activas",
+        "Se lanza al intentar **cerrar una emergencia** que tiene alguna misión pendiente, asignada o en ejecución.",
+        "§7.2 y PV16: para cerrar, todas las misiones tienen que estar finalizadas o canceladas."),
+      n("class ResultadoInvalido", "ResultadoInvalido: finalizar sin informar",
+        "Se lanza cuando el jefe **finaliza una misión** con un resultado fuera de catálogo, sin describir las tareas realizadas o sin fecha.\n\n"
+        "Ejemplo: finalizar con tareas = ''.",
+        "§2.3: al finalizar, el jefe registra el resultado y describe las tareas.")),
+ paso("err_resto", 1, "errores.py: emergencias e historial", ERR, R(ERR, "class EmergenciaCerrada", '"""Un registro histórico'),
+      "§7.2 y §9: el cierre de la emergencia y la validez de cada registro.",
+      n("class EmergenciaCerrada", "EmergenciaCerrada: ya no admite cambios",
+        "Se lanza cuando se intenta **agregar o modificar misiones** en una emergencia cerrada, o **cerrarla por segunda vez**.",
+        "§7.2 y PV16: una emergencia cerrada no admite nuevas misiones ni modificaciones operativas."),
+      n("class SinMisionExitosa", "SinMisionExitosa: falta un resultado satisfactorio",
+        "Se lanza al intentar cerrar una emergencia **sin misiones**, o cuyas misiones terminaron todas canceladas o finalizadas sin resultado satisfactorio.\n\n"
+        "La emergencia sigue abierta y admite nuevas misiones.",
+        "§7.2 y PV16: para cerrar hace falta al menos una misión finalizada con éxito."),
+      n("class RegistroInvalido", "RegistroInvalido: una constancia incompleta",
+        "Se lanza cuando un registro del historial no tiene **actor**, **fecha y hora**, una **operación del catálogo** o al menos un **recurso afectado**.",
+        "§9: cada registro identifica quién, cuándo, qué operación y sobre qué recursos. Un registro incompleto no se guarda.")),
  paso("his_registro", 1, "historial.py: Operacion y Registro", HIS, R(HIS, "from __future__", "return dict(self.detalle).get(clave)"),
       "§9: cada cambio deja constancia de quién hizo qué, cuándo y sobre qué recursos.",
       n("class Operacion(Enum)", "Operacion: qué se puede registrar",
