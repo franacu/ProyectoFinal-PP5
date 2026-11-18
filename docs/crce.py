@@ -56,6 +56,17 @@ addEventListener('message',e=>{const m=e.data||{};if(m.tema)document.body.classL
 addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const t=e.key.toLowerCase();if(t==='p')modo('presentacion');else if(t==='d')modo('diagrama');else if(t==='m')menu();else if(e.key==='Escape')menu(false)});
 fb.addEventListener('load',()=>fb.contentWindow.focus());
 </script></body></html>"""
+# Cada versión de las páginas internas lleva su propia huella en la dirección: si el contenido cambia,
+# cambia la dirección y el navegador no puede reutilizar la copia vieja que tenga guardada.
+import hashlib  # noqa: E402
+
+
+def _huella(nombre):
+    return hashlib.sha256((AQUI / nombre).read_bytes()).hexdigest()[:10]
+
+
+HTML = (HTML.replace('src="backend_presentacion.html"', f'src="backend_presentacion.html?v={_huella("backend_presentacion.html")}"')
+            .replace('src="diagrama.html"', f'src="diagrama.html?v={_huella("diagrama.html")}"'))
 (AQUI / "crce.html").write_text(HTML, encoding="utf-8")
 (AQUI / "index.html").write_text(HTML, encoding="utf-8")  # GitHub Pages sirve index.html en la raíz
 print("docs/crce.html e index.html listos")
