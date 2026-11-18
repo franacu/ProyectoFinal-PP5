@@ -1,0 +1,28 @@
+meta {
+  name: Evacuacion sin cantidad (422)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: operador1
+}
+
+body:json {
+  {
+    "tipo": "evacuacion",
+    "objetivo": "Evacuar"
+  }
+}
+
+tests {
+  test("responde 422", function () {
+    expect(res.status).to.equal(422);
+  });
+}

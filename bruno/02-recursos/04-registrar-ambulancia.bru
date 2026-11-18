@@ -1,0 +1,54 @@
+meta {
+  name: Registrar ambulancia
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/unidades
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: resp
+}
+
+body:json {
+  {
+    "id": "U-A-{{sfx}}",
+    "base_id": "B-{{sfx}}",
+    "jefe": {
+      "id": "gabi-{{sfx}}",
+      "nombre": "Gabi",
+      "competencias": [
+        "conduccion"
+      ]
+    },
+    "personal": [
+      {
+        "id": "hugo-{{sfx}}",
+        "nombre": "Hugo",
+        "competencias": [
+          "primeros_auxilios"
+        ]
+      }
+    ],
+    "vehiculo": {
+      "id": "AMB-{{sfx}}",
+      "categoria": "ambulancia"
+    },
+    "equipamiento": [
+      {
+        "id": "ES-{{sfx}}",
+        "categoria": "equipo_sanitario"
+      }
+    ]
+  }
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

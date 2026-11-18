@@ -1,0 +1,32 @@
+meta {
+  name: Crear mision de rescate
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: operador1
+}
+
+body:json {
+  {
+    "tipo": "rescate",
+    "objetivo": "Rescatar a dos personas atrapadas"
+  }
+}
+
+vars:post-response {
+  misionId: res.body.id
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

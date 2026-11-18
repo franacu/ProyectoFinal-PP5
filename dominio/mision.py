@@ -87,6 +87,7 @@ class VistaMision:
     unidad_id: str | None
     novedades: tuple[Novedad, ...]
     resultado: Resultado | None
+    datos_del_tipo: tuple[tuple[str, int], ...] = ()   # p. ej. (("cantidad_personas", 30),)
 
 
 # ── Estados (State) ───────────────────────────────────────────
@@ -192,6 +193,7 @@ class _Cancelada(_Estado):
 
 _PENDIENTE, _ASIGNADA, _EN_EJECUCION = _Pendiente(), _Asignada(), _EnEjecucion()
 _FINALIZADA, _CANCELADA = _Finalizada(), _Cancelada()
+_ESTADO_POR_ETIQUETA = {e.etiqueta: e for e in (_PENDIENTE, _ASIGNADA, _EN_EJECUCION, _FINALIZADA, _CANCELADA)}
 
 
 # ── Unidad asignada (Null Object) ─────────────────────────────
@@ -247,6 +249,41 @@ class Mision(ABC):
         self._asignacion: _Asignacion = _SIN_UNIDAD
         self._novedades: list[Novedad] = []
         self._resultado: Resultado | None = None
+
+    @classmethod
+    def restaurar(
+        cls,
+        *,
+        mision_id: str,
+        objetivo: str,
+        estado: EstadoMision,
+        unidad: Unidad | None,
+        novedades: tuple[Novedad, ...],
+        resultado: Resultado | None,
+        **datos_del_tipo,
+    ) -> Mision:
+        """Reconstruye una misión guardada. Recibe solo objetos del dominio.
+
+        `unidad` es la unidad ya restaurada (la misma instancia que está en la flota).
+        Se verifica que el estado y la unidad sean coherentes antes de devolverla.
+        """
+        if estado not in _ESTADO_POR_ETIQUETA:
+            raise MisionInvalida(f"Estado de misión desconocido: {estado!r}")
+        # Asignada o en ejecución: la unidad tiene que estar reservada para esta misión.
+        # Finalizada: conserva la unidad que la ejecutó, ya liberada (dato histórico).
+        if estado in (EstadoMision.ASIGNADA, EstadoMision.EN_EJECUCION):
+            if unidad is None or unidad.mision_comprometida_id != mision_id:
+                raise MisionInvalida(f"Una misión {estado.value} necesita su unidad comprometida con ella")
+        mision = cls(objetivo=objetivo, mision_id=mision_id, **datos_del_tipo)
+        mision._estado = _ESTADO_POR_ETIQUETA[estado]
+        mision._asignacion = _SIN_UNIDAD if unidad is None else _ConUnidad(unidad)
+        mision._novedades = list(novedades)
+        mision._resultado = resultado
+        return mision
+
+    def datos_del_tipo(self) -> dict[str, int]:
+        """Datos propios de cada tipo de misión (los necesita la persistencia). Por defecto, ninguno."""
+        return {}
 
     # ── Lo que cada tipo de misión define ──────────────────────
 
@@ -347,7 +384,7 @@ class Mision(ABC):
 
     def vista(self) -> VistaMision:
         return VistaMision(self._id, self.tipo, self._objetivo, self.estado, self.unidad_id,
-                           tuple(self._novedades), self._resultado)
+                           tuple(self._novedades), self._resultado, tuple(self.datos_del_tipo().items()))
 
 
 # ── Los tres tipos de misión ──────────────────────────────────
@@ -368,6 +405,9 @@ class Evacuacion(Mision):
     @property
     def cantidad_personas(self) -> int:
         return self._cantidad
+
+    def datos_del_tipo(self) -> dict[str, int]:
+        return {"cantidad_personas": self._cantidad}
 
     def verificar_vehiculo(self, vehiculo: Vehiculo) -> None:
         vehiculo.verificar_evacuacion(self._cantidad)

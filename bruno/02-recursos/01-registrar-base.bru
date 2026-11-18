@@ -1,0 +1,36 @@
+meta {
+  name: Registrar base
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/bases
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: resp
+}
+
+body:json {
+  {
+    "id": "B-{{sfx}}",
+    "nombre": "Base Centro",
+    "ubicacion": {
+      "direccion": "Maipú 100",
+      "localidad": "Ushuaia"
+    }
+  }
+}
+
+script:pre-request {
+  bru.setVar("sfx", String(Date.now()).slice(-6));
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

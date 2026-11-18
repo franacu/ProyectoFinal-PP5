@@ -1,0 +1,21 @@
+meta {
+  name: Cerrar emergencia
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/cierre
+  body: none
+  auth: none
+}
+
+headers {
+  X-Usuario: supervisor1
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

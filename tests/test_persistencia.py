@@ -14,10 +14,19 @@ from app.avisos.mongo_repository import RepositorioAvisosMongo
 from app.emergencias import esquema_mongo as esquema_emergencias
 from app.emergencias.mongo_repository import RepositorioEmergenciasMongo
 from app.internal.esquema import EsquemaIncompatible, migrar
+from app.recursos import esquema_mongo as esquema_recursos
+from app.recursos.mongo_repository import RepositorioFlotaMongo
 from dominio.aviso import Aviso, EstadoAviso
-from dominio.catalogos import Gravedad, TipoSituacion
+from dominio.catalogos import CategoriaEquipo, Competencia, CondicionServicio, Gravedad, ResultadoMision, TipoSituacion
 from dominio.emergencia import EstadoEmergencia
+from dominio.equipamiento import Equipo
+from dominio.errores import MisionInvalida, RecursoDuplicado
+from dominio.flota import BaseOperativa, Flota
+from dominio.mision import EstadoMision, Rescate
+from dominio.personal import Persona
+from dominio.unidad import Unidad
 from dominio.valores import Ubicacion
+from dominio.vehiculos import TransportePersonas, VehiculoRescate
 
 T0 = datetime(2026, 11, 20, 8, 0, tzinfo=UTC)
 
@@ -136,3 +145,81 @@ def test_repositorio_mongo_de_emergencias(base):
 
     assert [e.id for e in repositorio.listar()] == [emergencia.id]
     assert repositorio.obtener(emergencia.id).registros == emergencia.registros
+
+
+# ── Recursos y misiones (esquemas de unidades y emergencia v2) ─
+
+BASE = BaseOperativa("B-1", "Base Centro", Ubicacion("Maipú 100", "Ushuaia"))
+
+
+def unidad_de_rescate(uid="U-1", sufijo="") -> Unidad:
+    return Unidad(uid, "B-1", Persona(f"ana{sufijo}", "Ana", {Competencia.RESCATE}),
+                  VehiculoRescate(id=f"VR{sufijo}"),
+                  (Persona(f"bruno{sufijo}", "Bruno", {Competencia.CONDUCCION}),
+                   Persona(f"carla{sufijo}", "Carla", {Competencia.RESCATE})),
+                  (Equipo(f"ER{sufijo}", CategoriaEquipo.EQUIPO_DE_RESCATE),))
+
+
+def test_unidad_ida_y_vuelta_conserva_dotacion_condicion_e_historial():
+    flota = Flota()
+    flota.registrar_base(BASE)
+    unidad = unidad_de_rescate()
+    flota.incorporar_unidad(unidad, "resp", hora(0))
+    unidad.declarar_en_mantenimiento("resp", hora(1))
+
+    copia = esquema_recursos.unidad_desde_documento(esquema_recursos.unidad_a_documento(unidad))
+
+    assert esquema_recursos.unidad_a_documento(copia) == esquema_recursos.unidad_a_documento(unidad)
+    assert copia.condicion is CondicionServicio.EN_MANTENIMIENTO and copia.jefe.id == "ana"
+
+
+def test_el_transporte_conserva_su_capacidad():
+    vehiculo = TransportePersonas(id="TP-1", capacidad_evacuados=12)
+
+    copia = esquema_recursos.vehiculo_desde_documento(esquema_recursos.vehiculo_a_documento(vehiculo))
+
+    assert copia == vehiculo
+
+
+def test_al_cargar_la_flota_se_vuelve_a_verificar_que_nadie_este_en_dos_unidades(base):
+    repositorio = RepositorioFlotaMongo(base)
+    repositorio.guardar_base(BASE)
+    repositorio.guardar_unidad(unidad_de_rescate("U-1"))
+    repositorio.guardar_unidad(unidad_de_rescate("U-2"))   # mismas personas: documento corrupto
+
+    with pytest.raises(RecursoDuplicado):
+        repositorio.cargar()
+
+
+def test_emergencia_de_version_1_se_migra_sin_misiones():
+    emergencia = aviso_nuevo().aceptar("op", TipoSituacion.INCENDIO, Gravedad.ALTA, hora(4))
+    documento_v1 = esquema_emergencias.a_documento(emergencia) | {"version": 1}
+    del documento_v1["misiones"]
+
+    copia = esquema_emergencias.desde_documento(documento_v1)
+
+    assert copia.misiones == ()
+    assert esquema_emergencias.a_documento(copia)["version"] == 2
+
+
+def test_emergencia_con_mision_asignada_ida_y_vuelta_comparte_la_unidad_de_la_flota():
+    unidad = unidad_de_rescate()
+    emergencia = aviso_nuevo().aceptar("op", TipoSituacion.INCENDIO, Gravedad.ALTA, hora(4))
+    mision = Rescate("Rescatar")
+    emergencia.crear_mision(mision, "op", hora(5))
+    emergencia.asignar_mision(mision.id, unidad, "op", hora(6))
+    copia_unidad = esquema_recursos.unidad_desde_documento(esquema_recursos.unidad_a_documento(unidad))
+
+    copia = esquema_emergencias.desde_documento(esquema_emergencias.a_documento(emergencia),
+                                                {copia_unidad.id: copia_unidad})
+    copia.iniciar_mision(mision.id, "ana", hora(7))
+    copia.finalizar_mision(mision.id, "ana", ResultadoMision.SATISFACTORIO, "Rescate", hora(8))
+
+    assert copia.misiones[0].estado is EstadoMision.FINALIZADA
+    assert copia_unidad.mision_comprometida_id is None   # la misión liberó la misma unidad de la flota
+
+
+def test_una_mision_asignada_cuya_unidad_no_la_tiene_reservada_se_rechaza():
+    with pytest.raises(MisionInvalida):
+        Rescate.restaurar(mision_id="m1", objetivo="Rescatar", estado=EstadoMision.ASIGNADA,
+                          unidad=unidad_de_rescate(), novedades=(), resultado=None)

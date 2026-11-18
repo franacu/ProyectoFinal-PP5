@@ -1,0 +1,27 @@
+meta {
+  name: Asignar unidad de rescate 1
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/asignacion
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: operador1
+}
+
+body:json {
+  {
+    "unidad_id": "U-R1-{{sfx}}"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

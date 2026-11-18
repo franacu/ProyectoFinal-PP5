@@ -1,0 +1,21 @@
+meta {
+  name: Iniciar mision
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/inicio
+  body: none
+  auth: none
+}
+
+headers {
+  X-Usuario: diego-{{sfx}}
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

@@ -1,0 +1,61 @@
+meta {
+  name: Registrar unidad de rescate 2
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/unidades
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: resp
+}
+
+body:json {
+  {
+    "id": "U-R2-{{sfx}}",
+    "base_id": "B-{{sfx}}",
+    "jefe": {
+      "id": "diego-{{sfx}}",
+      "nombre": "Diego",
+      "competencias": [
+        "rescate"
+      ]
+    },
+    "personal": [
+      {
+        "id": "eva-{{sfx}}",
+        "nombre": "Eva",
+        "competencias": [
+          "conduccion"
+        ]
+      },
+      {
+        "id": "fede-{{sfx}}",
+        "nombre": "Fede",
+        "competencias": [
+          "rescate"
+        ]
+      }
+    ],
+    "vehiculo": {
+      "id": "VR2-{{sfx}}",
+      "categoria": "vehiculo_de_rescate"
+    },
+    "equipamiento": [
+      {
+        "id": "ER2-{{sfx}}",
+        "categoria": "equipo_de_rescate"
+      }
+    ]
+  }
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

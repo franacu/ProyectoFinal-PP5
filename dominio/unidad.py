@@ -71,6 +71,7 @@ class _FueraDeServicio(_Condicion):
 
 
 _HABILITADA, _EN_MANTENIMIENTO, _FUERA_DE_SERVICIO = _Habilitada(), _EnMantenimiento(), _FueraDeServicio()
+_CONDICION_POR_ETIQUETA = {c.etiqueta: c for c in (_HABILITADA, _EN_MANTENIMIENTO, _FUERA_DE_SERVICIO)}
 
 
 # ── Entidad ───────────────────────────────────────────────────
@@ -103,6 +104,33 @@ class Unidad:
         self._condicion: _Condicion = _HABILITADA
         self._mision_id: str | None = None
         self._registros: list[Registro] = []
+
+    @classmethod
+    def restaurar(
+        cls,
+        *,
+        unidad_id: str,
+        base_id: str,
+        jefe: Persona,
+        vehiculo: Vehiculo,
+        personal: tuple[Persona, ...],
+        equipamiento: tuple[Equipo, ...],
+        condicion: CondicionServicio,
+        mision_comprometida_id: str | None,
+        registros: tuple[Registro, ...],
+    ) -> Unidad:
+        """Reconstruye una unidad guardada. Recibe solo objetos del dominio.
+
+        La lectura de la base la resuelve el esquema de persistencia. `personal` es la
+        dotación sin el jefe (el jefe se pasa aparte, como en el constructor).
+        """
+        if condicion not in _CONDICION_POR_ETIQUETA:
+            raise RecursoInvalido(f"Condición de servicio desconocida: {condicion!r}")
+        unidad = cls(unidad_id, base_id, jefe, vehiculo, personal, equipamiento)
+        unidad._condicion = _CONDICION_POR_ETIQUETA[condicion]
+        unidad._mision_id = mision_comprometida_id
+        unidad._registros = list(registros)
+        return unidad
 
     # ── Lectura ────────────────────────────────────────────────
 

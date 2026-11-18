@@ -2,7 +2,8 @@
 
 TP Integrador 2026 · Paradigmas de Programación V · FIE-UNDEF
 
-Dominio en Python puro (solo biblioteca estándar), orientado a objetos.
+Dominio en Python puro (solo biblioteca estándar), orientado a objetos, expuesto mediante una API REST
+(FastAPI) por capas con persistencia en MongoDB.
 
 **Ver en línea (presentación y diagramas):** https://franacu.github.io/ProyectoFinal-PP5/
 
@@ -11,8 +12,8 @@ Dominio en Python puro (solo biblioteca estándar), orientado a objetos.
 Si solo querés mirarlo, no hace falta instalar nada: abrí https://franacu.github.io/ProyectoFinal-PP5/
 (en esa versión los enlaces al enunciado y a VS Code no funcionan). Para correrlo en tu máquina:
 
-Todavía no hay servidor web: lo que se ve es la **presentación y los diagramas interactivos**, que son
-páginas HTML estáticas generadas a partir del código real. No hace falta instalar nada más que Python.
+La versión en línea muestra la **presentación y los diagramas interactivos** (páginas HTML estáticas
+generadas a partir del código real). Para usar la API hacen falta además Docker y uv (pasos 3 y 3b).
 
 **1. Requisitos**
 
@@ -28,15 +29,16 @@ git clone https://github.com/franacu/ProyectoFinal-PP5.git
 cd ProyectoFinal-PP5
 ```
 
-**3. Instalar y comprobar que todo funciona** (debe terminar con `237 passed`)
+**3. Instalar y comprobar que todo funciona** (debe terminar con `305 passed`)
 
 ```bash
 uv sync
-uv run pytest
+uv run python -m pytest -q
 ```
 
-Los tests no necesitan MongoDB: la API se prueba con repositorios en memoria y los repositorios
-Mongo con `mongomock` (una base Mongo simulada).
+Los tests no necesitan MongoDB. Cada prueba de la API corre dos veces: con repositorios en memoria y con
+los repositorios de MongoDB sobre `mongomock` (una base Mongo simulada), de modo que también se prueba
+que cada objeto se guarde y se restaure sin pérdidas.
 
 **3b. Levantar la API REST con MongoDB**
 
@@ -47,7 +49,8 @@ uv run fastapi dev           # API en http://localhost:8000 · documentación en
 
 O todo en contenedores: `docker compose up -d --build`. Para probar los endpoints, abrir la carpeta
 `bruno/` con [Bruno](https://www.usebruno.com/) y elegir el entorno `local`
-(o por consola: `cd bruno && npx @usebruno/cli run --env local`).
+(o por consola: `cd bruno && npx @usebruno/cli run --env local`). La colección recorre avisos, recursos,
+misiones y cierre, con los casos negativos (403, 409, 422) y PV18; puede ejecutarse varias veces seguidas.
 
 Mientras no esté la autenticación, el usuario se indica con el encabezado `X-Usuario`.
 
@@ -120,14 +123,16 @@ tests/
   test_emergencias.py                       # PV03–PV05, PV16–PV18
   test_diseno.py                            # el dominio no pregunta por clase, solo stdlib, sin hora del sistema
   test_api_avisos.py, test_api_emergencias.py  # contrato HTTP y códigos de error
+  test_api_misiones.py                      # recursos, misiones y cierre por HTTP (PV04–PV18)
   test_persistencia.py                      # esquemas versionados y repositorios Mongo
   escenarios.py                             # armado de datos de ejemplo
-avance-1.md                # documento entregado en el Avance 1
+PDFs_documentacion/        # enunciado, Avance 1 (avance-1.md) y primera entrega (PDF)
 app/                       # capa de aplicación (FastAPI + MongoDB); el dominio no la conoce
   main.py                  # crear_aplicacion(): servicios, routers y manejo de errores
   dependencies.py          # entrega a cada endpoint su servicio (Depends)
   avisos/                  # router → service → repository; esquema_mongo (documento ⇄ Aviso, versionado)
-  emergencias/             # ídem para emergencias (consulta y prioridad)
+  emergencias/             # emergencias y misiones; esquema v2 (incluye misiones, migra la v1)
+  recursos/                # bases y unidades: composición y condición; fabricas (texto ⇄ clase)
   internal/                # conexión Mongo, reloj, identidad, esquema común, errores → HTTP
 bruno/                     # colección de pedidos HTTP con sus verificaciones
 docs/

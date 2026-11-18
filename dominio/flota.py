@@ -34,6 +34,25 @@ class Flota:
         self._bases: dict[str, BaseOperativa] = {}
         self._unidades: dict[str, Unidad] = {}
 
+    @classmethod
+    def restaurar(cls, bases: tuple[BaseOperativa, ...], unidades: tuple[Unidad, ...]) -> Flota:
+        """Reconstruye la flota guardada verificando otra vez la unicidad de recursos (§5.2)."""
+        flota = cls()
+        for base in bases:
+            flota.registrar_base(base)
+        for unidad in unidades:
+            if unidad.base_id not in flota._bases:
+                raise NoEncontrado(f"No existe la base {unidad.base_id}")
+            if unidad.id in flota._unidades:
+                raise RecursoDuplicado(f"Ya existe la unidad {unidad.id}")
+            for persona in unidad.personal:
+                flota._exigir_persona_libre(persona.id, None)
+            flota._exigir_vehiculo_libre(unidad.vehiculo.id, None)
+            for equipo in unidad.equipamiento:
+                flota._exigir_equipo_libre(equipo.id, None)
+            flota._unidades[unidad.id] = unidad
+        return flota
+
     # ── Consulta ───────────────────────────────────────────────
 
     @property

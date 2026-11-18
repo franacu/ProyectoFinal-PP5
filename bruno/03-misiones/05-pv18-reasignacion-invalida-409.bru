@@ -1,0 +1,30 @@
+meta {
+  name: PV18 reasignacion invalida (409)
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/asignacion
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: operador1
+}
+
+body:json {
+  {
+    "unidad_id": "U-A-{{sfx}}"
+  }
+}
+
+tests {
+  test("responde 409", function () {
+    expect(res.status).to.equal(409);
+  });
+  test("motivo: VehiculoIncompatible", function () {
+    expect(res.body.error).to.equal("VehiculoIncompatible");
+  });
+}

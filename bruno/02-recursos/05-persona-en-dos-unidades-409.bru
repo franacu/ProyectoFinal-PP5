@@ -1,0 +1,34 @@
+meta {
+  name: Persona en dos unidades (409)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/unidades/U-A-{{sfx}}/personal
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: resp
+}
+
+body:json {
+  {
+    "id": "carla-{{sfx}}",
+    "nombre": "Carla",
+    "competencias": [
+      "rescate"
+    ]
+  }
+}
+
+tests {
+  test("responde 409", function () {
+    expect(res.status).to.equal(409);
+  });
+  test("motivo: RecursoDuplicado", function () {
+    expect(res.body.error).to.equal("RecursoDuplicado");
+  });
+}

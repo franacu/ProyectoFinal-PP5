@@ -10,6 +10,7 @@ from fastapi import Request
 
 from app.avisos.service import ServicioAvisos
 from app.emergencias.service import ServicioEmergencias
+from app.recursos.service import ServicioRecursos
 
 
 def servicio_de_avisos(request: Request) -> ServicioAvisos:
@@ -18,3 +19,7 @@ def servicio_de_avisos(request: Request) -> ServicioAvisos:
 
 def servicio_de_emergencias(request: Request) -> ServicioEmergencias:
     return request.app.state.servicio_emergencias
+
+
+def servicio_de_recursos(request: Request) -> ServicioRecursos:
+    return request.app.state.servicio_recursos

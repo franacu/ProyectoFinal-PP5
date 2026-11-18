@@ -121,12 +121,12 @@ class Emergencia:
         creada_en: datetime,
         estado: EstadoEmergencia,
         registros: tuple[Registro, ...],
+        misiones: tuple[Mision, ...] = (),
     ) -> Emergencia:
         """Reconstruye una emergencia guardada. Recibe solo objetos del dominio.
 
         Cómo se lee la base (versión del documento, nombres de campos) lo resuelve
-        el esquema de persistencia, no este método. Las misiones se incorporan a la
-        persistencia en la próxima etapa.
+        el esquema de persistencia, no este método. Las misiones llegan ya restauradas.
         """
         if estado not in _ESTADO_POR_ETIQUETA:
             raise AceptacionInvalida(f"Estado desconocido: {estado!r}")
@@ -137,6 +137,7 @@ class Emergencia:
                          operador_id, emergencia_id)
         emergencia._estado = _ESTADO_POR_ETIQUETA[estado]
         emergencia._registros = list(registros)
+        emergencia._misiones = {m.id: m for m in misiones}
         return emergencia
 
     # ── Misiones: operador (§2.2) ──────────────────────────────

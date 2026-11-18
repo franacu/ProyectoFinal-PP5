@@ -1,0 +1,30 @@
+meta {
+  name: Ambulancia para un rescate (409)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/asignacion
+  body: json
+  auth: none
+}
+
+headers {
+  X-Usuario: operador1
+}
+
+body:json {
+  {
+    "unidad_id": "U-A-{{sfx}}"
+  }
+}
+
+tests {
+  test("responde 409", function () {
+    expect(res.status).to.equal(409);
+  });
+  test("motivo: VehiculoIncompatible", function () {
+    expect(res.body.error).to.equal("VehiculoIncompatible");
+  });
+}
