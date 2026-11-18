@@ -29,8 +29,14 @@ def test_emergencia_inexistente_404(cliente):
     assert cliente.get("/emergencias/no-existe", headers=operador()).status_code == 404
 
 
-def test_la_raiz_informa_el_estado(cliente):
-    assert cliente.get("/").json()["estado"] == "en línea"
+def test_estado_del_servicio(cliente):
+    assert cliente.get("/estado").json()["estado"] == "en línea"
+
+
+def test_la_raiz_lleva_a_la_interfaz_y_la_configuracion_no_pide_token(cliente):
+    assert cliente.get("/").url.path == "/app/"
+    assert "CRCE" in cliente.get("/app/").text
+    assert cliente.get("/configuracion").json()["realm"] == "crce"
 
 
 @pytest.mark.parametrize(("error", "codigo"), [

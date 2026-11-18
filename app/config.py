@@ -18,6 +18,8 @@ class Configuracion:
     keycloak_url: str = os.getenv("KEYCLOAK_URL", "http://localhost:8080")
     keycloak_realm: str = os.getenv("KEYCLOAK_REALM", "crce")
     keycloak_client_id: str = os.getenv("KEYCLOAK_CLIENT_ID", "crce-api")
+    # Dirección de Keycloak vista desde el navegador (en Compose, la API usa `keycloak:8080`).
+    keycloak_url_publica: str = os.getenv("KEYCLOAK_URL_PUBLICA", "http://localhost:8080")
 
     @property
     def mongo_uri(self) -> str:

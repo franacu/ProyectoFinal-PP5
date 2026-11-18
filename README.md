@@ -29,7 +29,7 @@ git clone https://github.com/franacu/ProyectoFinal-PP5.git
 cd ProyectoFinal-PP5
 ```
 
-**3. Instalar y comprobar que todo funciona** (debe terminar con `349 passed`)
+**3. Instalar y comprobar que todo funciona** (debe terminar con `351 passed`)
 
 ```bash
 uv sync
@@ -56,7 +56,9 @@ uv run python -m app.semilla
 uv run fastapi dev
 ```
 
-La API queda en http://localhost:8000 (documentación en `/docs`) y Keycloak en http://localhost:8080.
+La **interfaz gráfica** queda en http://localhost:8000 (redirige a `/app/`), la documentación de la API en
+`/docs` y Keycloak en http://localhost:8080. En la interfaz se ingresa con los usuarios de la tabla; cada perfil
+ve solo sus pantallas y las operaciones rechazadas muestran el motivo (por ejemplo, `VehiculoIncompatible`).
 Keycloak tarda unos 30 segundos en arrancar; hasta entonces las operaciones responden 503.
 
 **Usuarios de demostración** (carga inicial reproducible, §9). Contraseña de todos: `crce2026`.
@@ -173,6 +175,7 @@ app/                       # capa de aplicación (FastAPI + MongoDB); el dominio
   semilla.py               # carga inicial reproducible de bases y unidades
   internal/                # conexión Mongo, reloj, esquema común, errores → HTTP
 keycloak/crce-realm.json   # realm con los cinco perfiles y los usuarios de demostración
+interfaz/                  # interfaz gráfica (HTML, CSS y JavaScript, sin compilación) servida en /app
 bruno/                     # colección de pedidos HTTP con sus verificaciones
 docs/
   crce.py                  # genera crce.html: barra lateral con presentación y diagramas
@@ -192,3 +195,14 @@ docs/
 - **Falla antes de modificar**: toda operación valida todo primero; un rechazo no deja cambios ni registros.
 - **Historial inmutable**: cada agregado expone sus `Registro` como tupla de objetos congelados.
 - **Fechas como parámetro**: el dominio nunca llama a `datetime.now()`.
+
+## Demostración integral (PV19) en la interfaz
+
+1. `hospital` registra un aviso de incendio y le agrega una nota.
+2. `operador1` lo acepta, crea una misión de rescate, intenta asignar la ambulancia (rechazo:
+   `VehiculoIncompatible`) y asigna `U-rescate-1`.
+3. `recursos1` intenta poner `U-rescate-1` en mantenimiento (rechazo: `UnidadComprometida`).
+4. `ana` (jefa de `U-rescate-1`) inicia la misión, registra una novedad y la finaliza como satisfactoria.
+   `diego` no la ve: es de otra unidad.
+5. `supervisor1` revisa el historial y cierra la emergencia.
+6. `hospital` ve su aviso aceptado y la emergencia cerrada; `municipio` no ve avisos ajenos.

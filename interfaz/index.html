@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRCE · Coordinación de Emergencias</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231f2a37'/%3E%3Crect x='3' y='3' width='4' height='10' fill='%23c2332b'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <!-- Inicio de sesión -->
+  <main id="pantalla-ingreso" class="ingreso" hidden>
+    <form id="form-ingreso" class="ingreso__caja" autocomplete="on">
+      <h1 class="ingreso__titulo">Centro Regional de Coordinación de Emergencias</h1>
+      <p class="ingreso__ayuda">Ingresá con tu usuario. El perfil lo asigna Keycloak.</p>
+      <label>Usuario <input name="usuario" required autocomplete="username" autofocus></label>
+      <label>Contraseña <input name="clave" type="password" required autocomplete="current-password"></label>
+      <button class="boton boton--principal" type="submit">Ingresar</button>
+      <p id="error-ingreso" class="aviso-error" role="alert" hidden></p>
+      <details class="ingreso__demo">
+        <summary>Usuarios de demostración</summary>
+        <p>Contraseña de todos: <code>crce2026</code></p>
+        <ul>
+          <li><code>hospital</code>, <code>municipio</code>: reportantes</li>
+          <li><code>operador1</code>: operador de coordinación</li>
+          <li><code>ana</code>, <code>diego</code>, <code>gabi</code>, <code>ines</code>: jefes de unidad</li>
+          <li><code>recursos1</code>: responsable de recursos</li>
+          <li><code>supervisor1</code>: supervisor regional</li>
+        </ul>
+      </details>
+    </form>
+  </main>
+
+  <!-- Aplicación -->
+  <div id="pantalla-app" class="app" hidden>
+    <header class="barra">
+      <span class="barra__marca">CRCE</span>
+      <span class="barra__usuario"><strong id="nombre-usuario"></strong> · <span id="perfil-usuario"></span></span>
+      <button id="boton-salir" class="boton boton--claro" type="button">Salir</button>
+    </header>
+    <nav id="menu" class="menu" aria-label="Secciones"></nav>
+    <section class="contenido">
+      <div id="mensaje" class="mensaje" role="status" aria-live="polite" hidden></div>
+      <div id="vista"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -6,8 +6,11 @@
 
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.avisos.mongo_repository import RepositorioAvisosMongo
 from app.avisos.repository import RepositorioAvisos, RepositorioAvisosEnMemoria
@@ -17,6 +20,7 @@ from app.emergencias.mongo_repository import RepositorioEmergenciasMongo
 from app.emergencias.repository import RepositorioEmergencias, RepositorioEmergenciasEnMemoria
 from app.emergencias.router import Router as RouterEmergencias
 from app.emergencias.service import ServicioEmergencias
+from app.config import configuracion
 from app.internal.database import ConexionMongo
 from app.internal.errores_http import registrar_manejadores
 from app.internal.reloj import Reloj, reloj_del_sistema
@@ -73,13 +77,25 @@ def crear_aplicacion(repositorios: Repositorios | None = None, reloj: Reloj = re
     aplicacion.include_router(emergencias.router)
     aplicacion.include_router(emergencias.misiones)
     aplicacion.include_router(RouterRecursos().router)
-    aplicacion.add_api_route("/", estado_del_servicio, methods=["GET"], tags=["sistema"])
+    aplicacion.add_api_route("/estado", estado_del_servicio, methods=["GET"], tags=["sistema"])
+    aplicacion.add_api_route("/configuracion", configuracion_publica, methods=["GET"], tags=["sistema"])
+    aplicacion.add_api_route("/", lambda: RedirectResponse("/app/"), methods=["GET"], include_in_schema=False)
+    aplicacion.mount("/app", StaticFiles(directory=_INTERFAZ, html=True), name="interfaz")
     registrar_manejadores(aplicacion)
     return aplicacion
 
 
+_INTERFAZ = Path(__file__).resolve().parent.parent / "interfaz"   # privado: la interfaz gráfica
+
+
 def estado_del_servicio() -> dict[str, str]:
-    return {"servicio": "crce", "estado": "en línea", "documentacion": "/docs"}
+    return {"servicio": "crce", "estado": "en línea", "documentacion": "/docs", "interfaz": "/app/"}
+
+
+def configuracion_publica() -> dict[str, str]:
+    """Lo que la interfaz necesita para iniciar sesión en Keycloak. No incluye secretos."""
+    return {"keycloak_url": configuracion.keycloak_url_publica, "realm": configuracion.keycloak_realm,
+            "client_id": configuracion.keycloak_client_id}
 
 
 app = crear_aplicacion()
