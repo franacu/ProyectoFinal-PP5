@@ -24,7 +24,7 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padd
 <button class="op" id="bd" aria-pressed="false"><span class="ico">◇</span><span class="t"><b>Diagramas</b><small>Con zoom; recorré clases, estados y lista</small></span></button>
 <span class="sp"></span>
 <div class="ayuda"><kbd>P</kbd> presentación · <kbd>D</kbd> diagramas · <kbd>M</kbd> menú<br>En la presentación: <kbd>Espacio</kbd> avanza, <kbd>Esc</kbd> vuelve a la lista, <kbd>D</kbd> abre el diagrama de la clase, <kbd>F</kbd> pantalla completa</div></nav>
-<main><iframe id="fb" src="backend_presentacion.html?v=c604a6eb02" title="Presentación" allow="fullscreen" allowfullscreen></iframe><iframe id="fd" src="diagrama.html?v=9581ba3723" title="Diagramas" allow="fullscreen" allowfullscreen hidden></iframe></main>
+<main><iframe id="fb" src="backend_presentacion.html?v=3d53222be1" title="Presentación" allow="fullscreen" allowfullscreen></iframe><iframe id="fd" src="diagrama.html?v=9581ba3723" title="Diagramas" allow="fullscreen" allowfullscreen hidden></iframe></main>
 <script>
 const fb=document.getElementById('fb'),fd=document.getElementById('fd'),bp=document.getElementById('bp'),bd=document.getElementById('bd'),nav=document.querySelector('nav'),velo=document.getElementById('velo'),hb=document.getElementById('hb');
 function menu(v){const o=v===undefined?!nav.classList.contains('abierto'):v;nav.classList.toggle('abierto',o);velo.classList.toggle('on',o);hb.setAttribute('aria-expanded',o);hb.setAttribute('aria-label',o?'Cerrar el menú':'Abrir el menú')}

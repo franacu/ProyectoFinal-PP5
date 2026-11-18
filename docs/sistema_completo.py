@@ -80,7 +80,7 @@ ESCENARIOS = [
     ("PV16", "Cierre de emergencia", "test_emergencias", "Bruno · interfaz"),
     ("PV17", "Historial de operaciones", "test_emergencias", "Bruno · interfaz"),
     ("PV18", "Consistencia ante errores", "test_emergencias, test_api_misiones", "Bruno (409)"),
-    ("PV19", "Demostración integral", "—", "interfaz (grupo siguiente)"),
+    ("PV19", "Demostración integral", "—", "interfaz (grupo 10)"),
 ]
 
 USUARIOS = [
@@ -176,20 +176,6 @@ def slides_plataforma():
         'repositorio donde se puede verificar.</p>'
         f'<table class="sc-tabla"><thead><tr><th>Requisito</th><th>Cómo se cumple</th><th>Dónde</th><th></th></tr></thead>'
         f'<tbody>{filas}</tbody></table>')))
-
-    cab = ('<div class="sc-esc cab"><b>PV</b><span class="t">Escenario</span><span class="p">Pruebas</span>'
-           '<span class="o">También en</span></div>')
-    def columna(filas):
-        return '<div>' + cab + "".join(
-            f'<div class="sc-esc"><b>{pv}</b><span class="t">{esc(t)}</span><span class="p">{esc(p)}</span>'
-            f'<span class="o">{esc(o)}</span></div>' for pv, t, p, o in filas) + '</div>'
-    celdas = columna(ESCENARIOS[:10]) + columna(ESCENARIOS[10:])
-    s.append(dict(eyebrow="sistema completo · escenarios de validación", titulo="Los 19 escenarios y dónde se demuestra cada uno", html=(
-        '<p class="lead corto">Cada escenario tiene pruebas automáticas que lo reproducen. Los rechazos se muestran también '
-        'con Bruno, y el recorrido completo, con la interfaz (el enunciado admite demostrar los casos negativos con Bruno).</p>'
-        f'<div class="sc-escs">{celdas}</div>'
-        '<p class="sc-pie">Los archivos de pruebas están en <code>tests/</code> y cada prueba nombra el escenario que '
-        'reproduce.</p>')))
 
     pasos = "".join(f'<li><b>{n}</b><span>{md(t)}</span></li>' for n, t in [
         (1, "El usuario escribe usuario y clave en la interfaz; Keycloak los valida y devuelve un **token firmado** (JWT)."),
@@ -327,6 +313,24 @@ docker compose down""") +
     return s
 
 
+def slide_escenarios():
+    """La tabla de los 19 escenarios: abre el grupo «Los 19 escenarios»."""
+    cab = ('<div class="sc-esc cab"><b>PV</b><span class="t">Escenario</span><span class="p">Pruebas</span>'
+           '<span class="o">También en</span></div>')
+    def columna(filas):
+        return '<div>' + cab + "".join(
+            f'<div class="sc-esc"><b>{pv}</b><span class="t">{esc(t)}</span><span class="p">{esc(p)}</span>'
+            f'<span class="o">{esc(o)}</span></div>' for pv, t, p, o in filas) + '</div>'
+    celdas = columna(ESCENARIOS[:10]) + columna(ESCENARIOS[10:])
+    return dict(eyebrow="escenarios · resumen", titulo="Los 19 escenarios y dónde se demuestra cada uno", html=(
+        '<p class="lead corto">Cada escenario tiene pruebas automáticas que lo reproducen. Los rechazos se muestran también '
+        'con Bruno, y el recorrido completo, con la interfaz (el enunciado admite demostrar los casos negativos con Bruno).</p>'
+        f'<div class="sc-escs">{celdas}</div>'
+        '<p class="sc-pie">Los archivos de pruebas están en <code>tests/</code> y cada prueba nombra el escenario que '
+        'reproduce. En las diapositivas siguientes, cada escenario con capturas reales del sistema.</p>'))
+
+
+
 # ───────────────────────── grupo 2 · la interfaz en uso ─────────────────────────
 
 # (actor, título, imágenes [(archivo, alt)], qué hace, qué pasa por dentro, escenarios)
@@ -426,7 +430,7 @@ def slides_interfaz():
         f'<table class="sc-tabla sc-evol"><thead><tr><th></th><th>Quién</th><th>Operación</th><th>Aviso</th><th>Emergencia</th>'
         f'<th>Misión</th><th>Unidad</th></tr></thead><tbody>{filas}</tbody></table>'
         '<div class="callout">Los rechazos del camino (ambulancia para un rescate, modificar una unidad comprometida) no '
-        'cambian ninguna columna: esa es la consistencia que pide PV18.</div>' + JS)))
+        'cambian ninguna columna: esa es la consistencia que pide PV18.</div>')))
     return s
 
 

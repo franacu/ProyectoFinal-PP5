@@ -1,0 +1,100 @@
+{
+ "pv01": {
+  "usuario": "municipio",
+  "metodo": "GET",
+  "ruta": "/avisos/130d2c41-4fc0-4479-af6e-ce96f9647624",
+  "cuerpo": null,
+  "codigo": 403,
+  "respuesta": {
+   "detail": "Solo se pueden consultar los avisos propios",
+   "error": "AccesoDenegado"
+  }
+ },
+ "pv12-reportante": {
+  "usuario": "hospital",
+  "metodo": "POST",
+  "ruta": "/emergencias/a1beb374-4ffc-4db6-8de7-60abc1f8545b/misiones/1e3d8991-a37d-4ee5-9e70-dff0fb895766/asignacion",
+  "cuerpo": {
+   "unidad_id": "U-rescate-1"
+  },
+  "codigo": 403,
+  "respuesta": {
+   "detail": "Operación permitida solo para: operador (perfil actual: reportante)"
+  }
+ },
+ "pv12-recursos": {
+  "usuario": "recursos1",
+  "metodo": "POST",
+  "ruta": "/emergencias/a1beb374-4ffc-4db6-8de7-60abc1f8545b/cierre",
+  "cuerpo": null,
+  "codigo": 403,
+  "respuesta": {
+   "detail": "Operación permitida solo para: supervisor (perfil actual: responsable_recursos)"
+  }
+ },
+ "pv10": {
+  "usuario": "operador1",
+  "metodo": "POST",
+  "ruta": "/emergencias/25f74330-8c01-4c13-9e03-7a4738958e2a/misiones/efcc6f63-9c23-424a-b4b2-34f96086f4f9/asignacion",
+  "cuerpo": {
+   "unidad_id": "U-rescate-2"
+  },
+  "codigo": 409,
+  "respuesta": {
+   "detail": "La unidad U-rescate-2 ya tiene la misión 832a72c6-2387-4dd0-bb88-fdfb789ef5fc",
+   "error": "UnidadOcupada"
+  }
+ },
+ "pv12-jefe": {
+  "usuario": "diego",
+  "metodo": "POST",
+  "ruta": "/emergencias/c7d9e734-0df9-4149-9a32-26c8bb1c4cb0/misiones/cf5156db-889b-4f3b-88d3-b67a9325bd0b/finalizacion",
+  "cuerpo": {
+   "resultado": "satisfactorio",
+   "tareas": "Foco controlado"
+  },
+  "codigo": 403,
+  "respuesta": {
+   "detail": "El usuario no es el jefe de la unidad U-rescate-1",
+   "error": "NoEsJefeDeLaUnidad"
+  }
+ },
+ "pv13-ejecucion": {
+  "usuario": "operador1",
+  "metodo": "PUT",
+  "ruta": "/emergencias/c7d9e734-0df9-4149-9a32-26c8bb1c4cb0/misiones/cf5156db-889b-4f3b-88d3-b67a9325bd0b/asignacion",
+  "cuerpo": {
+   "unidad_id": "U-rescate-2"
+  },
+  "codigo": 409,
+  "respuesta": {
+   "detail": "Una misión en_ejecucion no puede reasignarse",
+   "error": "MisionEnEstadoInvalido"
+  }
+ },
+ "pv15": {
+  "usuario": "gabi",
+  "metodo": "POST",
+  "ruta": "/emergencias/a1beb374-4ffc-4db6-8de7-60abc1f8545b/misiones/29ea9305-14c9-42b7-ae09-c0340f14a221/inicio",
+  "cuerpo": null,
+  "codigo": 409,
+  "respuesta": {
+   "detail": "Una misión cancelada no puede iniciarse",
+   "error": "MisionEnEstadoInvalido"
+  }
+ },
+ "pv16": {
+  "usuario": "operador1",
+  "metodo": "POST",
+  "ruta": "/emergencias/b64678ed-985a-481a-bb08-aab98839b00b/misiones",
+  "cuerpo": {
+   "tipo": "rescate",
+   "objetivo": "Otra tarea"
+  },
+  "codigo": 409,
+  "respuesta": {
+   "detail": "Una emergencia cerrada no admite misiones ni modificaciones operativas",
+   "error": "EmergenciaCerrada"
+  }
+ }
+}
