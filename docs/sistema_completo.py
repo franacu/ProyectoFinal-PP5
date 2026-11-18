@@ -201,9 +201,12 @@ def slides_plataforma():
         'configuración) en una <b>imagen</b>; un <b>contenedor</b> es esa imagen en ejecución. <b>Docker Compose</b> '
         'describe varios contenedores que trabajan juntos y los levanta con una sola orden.</p>'
         f'<div class="tres">{tarjetas}</div>'
-        '<div class="callout">Problema que evita: «en mi máquina funciona». Sin Docker habría que instalar Python 3.13, '
+        '<div class="sc-dk">' + foto("../docker/desktop.webp", "Docker Desktop con el proyecto crce",
+                                      "Docker Desktop: el proyecto `crce` con sus tres contenedores en marcha, cada uno con "
+                                      "su imagen y su puerto.")
+        + '<div class="callout">Problema que evita: «en mi máquina funciona». Sin Docker habría que instalar Python 3.13, '
         'MongoDB y Keycloak con las mismas versiones, crear usuarios y cargar datos a mano. Con Compose, '
-        'el profesor ejecuta lo mismo que se probó.</div>')))
+        'el profesor ejecuta lo mismo que se probó.</div></div>')))
 
     orden = "".join(f'<li><b>{n}</b><span>{md(t)}</span></li>' for n, t in [
         (1, "Arrancan `db` y `keycloak`; Keycloak importa el realm."),
@@ -223,6 +226,25 @@ docker compose logs api
 docker compose down""") +
         '<p class="sc-pie"><code>down</code> detiene todo y conserva los datos; <code>down -v</code> borra también el volumen.</p>'
         '</div></div>')))
+
+    lectura = "".join(f'<li><b>{n}</b><span>{md(t)}</span></li>' for n, t in [
+        (1, "`[build 1/7]` a `[build 7/7]`: la primera etapa. Las líneas `CACHED` reutilizan lo que no cambió: si "
+            "`uv.lock` es el mismo, las dependencias no se vuelven a instalar."),
+        (2, "`[build 6/7] COPY . .`: entra el código nuevo; por eso solo se rehace desde ahí."),
+        (3, "`[runtime 1/4]` a `[runtime 4/4]`: la imagen final copia el resultado y crea el usuario `appuser`."),
+        (4, "`naming to docker.io/library/crce-api:latest`: la imagen queda lista."),
+        (5, "`up 4/4`: imagen construida, `db` **Healthy**, `keycloak` corriendo y recién entonces `api` **Started**."),
+    ])
+    s.append(dict(eyebrow="sistema completo · docker", titulo="La construcción, vista en la terminal", html=(
+        '<div class="sc-docs"><div class="sc-texto"><p class="explain">Salida real de <code>docker compose up -d --build</code>, '
+        'leída de arriba hacia abajo:</p>'
+        f'<ol class="sc-pasos">{lectura}</ol></div>'
+        + '<div class="sc-apila">'
+        + foto("../docker/compose-build.webp", "Salida de docker compose up --build",
+               "Construcción de la imagen `crce-api` en dos etapas.")
+        + foto("../docker/compose-ps.webp", "docker compose ps con los tres contenedores",
+               "Final de la orden y `docker compose ps`: los tres en marcha y la base `healthy`.")
+        + '</div></div>')))
 
     filas_v = "".join(f'<tr><td><code>{esc(v)}</code></td><td><code>{esc(x)}</code></td><td>{esc(d)}</td></tr>'
                       for v, x, d in VARIABLES)
@@ -489,10 +511,12 @@ CSS = r"""
 .sc-quien{display:inline-block;background:var(--gold);color:#0b1020;font-weight:700;font-size:12.5px;border-radius:99px;padding:3px 12px}
 .sc-pv{display:inline-block;color:var(--accent);border:1px solid #32665e;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;margin:8px 6px 0 0}
 .sc-est{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:.92em}
+.sc-dk{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;align-items:center;margin-top:14px}.sc-dk .callout{margin:0}
+.sc-apila{display:flex;flex-direction:column;gap:12px;min-width:0}.sc-apila .sc-foto img{max-height:none}
 .sc-docs{display:grid;grid-template-columns:minmax(260px,.7fr) 1.6fr;gap:clamp(14px,2vw,28px);align-items:start}
 .sc-docs2{display:grid;grid-template-columns:minmax(240px,.8fr) 1fr 1fr;gap:16px;align-items:start}
 .sc-docs2 .sc-foto img{max-height:62vh}
-@media (max-width:900px){.sc-docs,.sc-docs2{grid-template-columns:1fr}}
+@media (max-width:900px){.sc-dk,.sc-docs,.sc-docs2{grid-template-columns:1fr}}
 .sc-evol td:first-child{color:var(--muted);width:24px}
 .sc-pie{font-size:13px;color:var(--muted);margin:10px 0 0;line-height:1.45}.sc-pie code{font-size:.95em}
 .sc-que{color:var(--soft)!important;margin-top:8px!important;font-size:13px!important;line-height:1.35}
