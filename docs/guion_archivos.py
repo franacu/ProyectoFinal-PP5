@@ -982,7 +982,7 @@ P += [
         "\n"
         "Recién después **libera la unidad**, guarda el resultado y cambia a **Finalizada**.",
         "Si el resultado es inválido, la unidad no se libera y la misión sigue en ejecución.")),
- paso("mis_lectura", 5, "mision.py: lo que la emergencia le pregunta", MIS, (R(MIS, "def es_exitosa", "def es_exitosa")[0] - 3, R(MIS, "tuple(self._novedades), self._resultado)", "tuple(self._novedades), self._resultado)")[1]),
+ paso("mis_lectura", 5, "mision.py: lo que la emergencia le pregunta", MIS, (R(MIS, "def es_exitosa", "def es_exitosa")[0] - 3, R(MIS, "tuple(self._novedades), self._resultado", "tuple(self._novedades), self._resultado")[1]),
       "La emergencia pregunta sin poder modificar.",
       n("def verificar_concluida", "verificar_concluida() y es_exitosa()",
         "La misión **no responde sola**: le pasa la pregunta a su estado.\n"

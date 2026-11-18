@@ -21,6 +21,7 @@ import backend_general as bg  # noqa: E402
 import backend_meta as bm  # noqa: E402
 import conformacion as cf  # noqa: E402
 import guion_archivos as ga  # noqa: E402
+import sistema_completo as sc  # noqa: E402
 
 RAIZ = AQUI.parent
 SALIDA = AQUI / "backend_presentacion.html"
@@ -260,6 +261,17 @@ def construir():
         idx.append(agregar(s, g))
     grupos.append(dict(titulo="Conformación del diagrama", desc="Del enunciado a cada clase, y de las clases a sus relaciones, "
                        "hasta el diagrama completo.", archivos=[], slides=idx, entradas={}))
+
+    # sistema completo: lo que rodea al dominio (grupo 9) y la interfaz en uso (grupo 10)
+    for titulo, desc, generar in (
+            ("Plataforma", "Requisitos de la entrega final, Keycloak, Docker, configuración, API y pruebas.", sc.slides_plataforma),
+            ("La interfaz en uso", "El recorrido de PV19 con capturas reales, participante por participante.", sc.slides_interfaz)):
+        g = len(grupos)
+        idx = []
+        for s in generar():
+            s["k"], s["archivo"] = "sistema", None
+            idx.append(agregar(s, g))
+        grupos.append(dict(titulo=titulo, desc=desc, archivos=[], slides=idx, entradas={}))
     return slides, grupos
 
 
@@ -277,9 +289,12 @@ ICONOS = {   # íconos de línea, 24×24, dibujados con el color del texto
     8: '<rect x="3" y="3" width="7" height="6" rx="1"/><rect x="14" y="3" width="7" height="6" rx="1"/>'
        '<rect x="8.5" y="15" width="7" height="6" rx="1"/><path d="M6.5 9v3h11V9M12 12v3"/>',
     7: '<path d="M7 18v-5a5 5 0 0 1 10 0v5"/><path d="M5 18h14v3H5z"/><path d="M12 3v2M4.5 6l1.4 1.4M19.5 6l-1.4 1.4"/>',
+    9: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/>'
+       '<path d="M7 7h.01M7 17h.01"/>',
+    10: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path d="m8 10 2 2 4-4"/>',
 }
 # columnas del menú: los grupos en el orden en que se construyó el código, de izquierda a derecha
-COLUMNAS = [("Fundamentos", [8, 1, 2]), ("Avisos y recursos", [3, 4, 5]), ("Coordinación", [6, 7])]
+COLUMNAS = [("Fundamentos", [8, 1, 2]), ("Avisos y recursos", [3, 4, 5]), ("Coordinación", [6, 7]), ("Sistema completo", [9, 10])]
 
 FUENTES_MENU = [(400, "montserrat-latin-400-normal"), (500, "montserrat-latin-500-normal"),
                 (600, "montserrat-latin-600-normal"), (700, "montserrat-latin-700-normal")]
@@ -342,7 +357,7 @@ def pagina(slides, grupos):
     grupos_js = [dict(titulo=gr["titulo"], archivos=gr["archivos"], slides=gr["slides"], entradas=gr["entradas"]) for gr in grupos]
     pagina_html = PLANTILLA
     for clave, valor in (("%%SECCIONES%%", "\n".join(secciones)), ("%%MENU%%", menu_html(slides, grupos)),
-                         ("%%FUENTES_MENU%%", fuentes_menu()), ("%%CONF_CSS%%", cf.CSS), ("%%META%%", json.dumps(meta, ensure_ascii=False)),
+                         ("%%FUENTES_MENU%%", fuentes_menu()), ("%%CONF_CSS%%", cf.CSS + sc.CSS), ("%%META%%", json.dumps(meta, ensure_ascii=False)),
                          ("%%GRUPOS%%", json.dumps(grupos_js, ensure_ascii=False)), ("%%TOTAL%%", str(total))):
         pagina_html = pagina_html.replace(clave, valor)
     return pagina_html
@@ -517,7 +532,7 @@ body.modo-lista .top span:first-child{color:var(--text);font-weight:600;letter-s
 #lista{font-family:"Montserrat",system-ui,sans-serif;color:var(--text);max-width:1320px}
 #lista h1{font:600 clamp(26px,2.4vw,34px)/1.15 "Montserrat",sans-serif;letter-spacing:-.015em;color:var(--text);margin:clamp(6px,1.5vh,18px) 0 6px}
 #lista .lead{font:400 clamp(14px,1.05vw,16px)/1.5 "Montserrat",sans-serif;color:var(--muted);max-width:760px;margin:0 0 clamp(14px,2.4vh,26px)}
-.mega{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
+.mega{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden}
 .mega .col{padding:clamp(18px,3.2vh,34px) clamp(12px,1.6vw,24px) clamp(14px,2.4vh,26px)}
 .mega .col+.col{border-left:1px solid var(--line)}
 .mega h3{font:600 15px/1.2 "Montserrat",sans-serif;color:var(--accent);margin:0 0 clamp(8px,1.6vh,16px);padding-left:14px}

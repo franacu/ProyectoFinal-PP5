@@ -61,7 +61,9 @@ DESC_PRUEBAS = {
 def _correr_pruebas():
     """Ejecuta pytest de verdad: pruebas por archivo y cómo terminaron (None si no se pudo ejecutar)."""
     try:
-        r = subprocess.run([sys.executable, "-m", "pytest", "-v", "-p", "no:cacheprovider", "-o", "addopts="], cwd=RAIZ,
+        # solo las pruebas del dominio: las de la API se presentan en «Sistema completo»
+        r = subprocess.run([sys.executable, "-m", "pytest", "-v", "-p", "no:cacheprovider", "-o", "addopts=",
+                            *(f"tests/{a}" for a in PRUEBAS)], cwd=RAIZ,
                            capture_output=True, text=True, timeout=300)
         cuentas, resultados = defaultdict(int), defaultdict(int)
         for linea in r.stdout.splitlines():
