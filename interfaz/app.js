@@ -157,11 +157,26 @@ async function dibujarVista() {
     contenedor.innerHTML = await vista(...argumentos);
     contenedor.querySelectorAll("form[data-accion]").forEach((f) => f.addEventListener("submit", enviarFormulario));
     contenedor.querySelectorAll("[data-ir]").forEach((b) => b.addEventListener("click", () => irA(VISTA_POR_NOMBRE[b.dataset.ir], b.dataset.id)));
+    mostrarCantidadSoloEnEvacuacion(contenedor);
   } catch (error) {
     if (!(error instanceof ErrorDeApi)) throw error;
     contenedor.innerHTML = "";
     mostrarMensaje("error", `No se pudo cargar: ${error.message}`, error.tipo);
   }
+}
+
+// La cantidad de personas solo tiene sentido en una evacuación: el campo aparece solo para ese tipo.
+function mostrarCantidadSoloEnEvacuacion(contenedor) {
+  const form = contenedor.querySelector('form[data-accion="crearMision"]');
+  if (!form) return;
+  const tipo = form.querySelector('select[name="tipo"]');
+  const campo = form.querySelector(".solo-evacuacion");
+  const actualizar = () => {
+    campo.hidden = tipo.value !== "evacuacion";
+    if (campo.hidden) campo.querySelector("input").value = "";
+  };
+  tipo.addEventListener("change", actualizar);
+  actualizar();
 }
 
 // Cada formulario declara su acción en data-accion; los datos salen de sus campos.
@@ -284,7 +299,7 @@ async function vistaDetalleEmergencia(id) {
   const crear = operador && abierta ? `<form class="formulario seccion" data-accion="crearMision" data-emergencia="${e.id}">
       <h3>Nueva misión</h3>
       <div class="fila"><label>Tipo <select name="tipo">${opciones(TIPOS_MISION)}</select></label>
-        <label>Personas a evacuar <input name="cantidad_personas" type="number" min="1" placeholder="Solo para evacuación"></label></div>
+        <label class="solo-evacuacion">Personas a evacuar <input name="cantidad_personas" type="number" min="1"></label></div>
       <label>Objetivo <input name="objetivo" required></label>
       <div><button class="boton boton--principal">Crear misión</button></div></form>` : "";
   const cerrar = estado.perfil === "supervisor" && abierta ? `<form class="acciones" data-accion="cerrar" data-emergencia="${e.id}">
