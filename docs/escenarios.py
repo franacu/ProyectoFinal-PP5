@@ -178,9 +178,9 @@ ESCENARIOS = [
 ]
 
 
-def slides(resumen):
-    """`resumen` es la diapositiva con la tabla de los 19 escenarios; va primero."""
-    s = [resumen]
+def slides(pruebas, resumen):
+    """Primero cómo se verifican (pruebas y Bruno) y la tabla de los 19; después, un escenario por diapositiva."""
+    s = [pruebas, resumen]
     total = len(ESCENARIOS) + 1
     for n, (pv, titulo, pide, como, pruebas, evid) in enumerate(ESCENARIOS, 1):
         cols = min(len(evid), 4)
@@ -191,7 +191,7 @@ def slides(resumen):
             f'<div><h3>Pruebas</h3><p class="sc-pie"><code>{esc(pruebas)}</code></p></div></div>'
             f'<div class="pv-evid c{cols}">{"".join(evid)}</div></div>')))
     s.append(dict(eyebrow=f"escenarios · PV19 · {total} de {total}", titulo="PV19 · Demostración integral", html=(
-        '<p class="lead">El recorrido completo con los cinco participantes está en el grupo <b>10 · La interfaz en uso</b>: '
+        '<p class="lead">El recorrido completo con los cinco participantes está en el grupo siguiente, <b>11 · La interfaz en uso</b>: '
         'reportante, operador, responsable de recursos, jefe de unidad y supervisor, sobre la misma emergencia.</p>'
         '<div class="callout">Las capturas de este grupo se tomaron reproduciendo los escenarios en orden contra el sistema '
         'levantado (API, MongoDB y Keycloak). Las respuestas de la API son las que devolvió en esa corrida; los ids '

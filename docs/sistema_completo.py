@@ -38,28 +38,6 @@ def pre(texto):
 
 # ───────────────────────── grupo 1 · plataforma ─────────────────────────
 
-EXIGENCIAS = [
-    # (lo que pide §12, cómo se cumple, dónde está)
-    ("Aplicación en Python", "Python 3.13; dependencias fijadas con `uv` (`uv.lock`).", "`pyproject.toml`"),
-    ("Modelo de dominio con POO", "Clases puras, sin FastAPI ni Mongo: estados, polimorfismo, doble despacho, objetos nulos, "
-     "valores inmutables y errores propios.", "`dominio/`"),
-    ("API HTTP en capas", "36 rutas; cada recurso con router → servicio → repositorio. El router traduce HTTP, el servicio "
-     "coordina y el dominio decide.", "`app/avisos`, `app/emergencias`, `app/recursos`"),
-    ("Persistencia", "MongoDB con documentos versionados: si cambia el formato, se migra al leer.",
-     "`*/mongo_repository.py`, `*/esquema_mongo.py`"),
-    ("Autenticación y autorización", "Keycloak emite el token; la API lo verifica y aplica dos niveles: perfil por ruta y "
-     "relación con el recurso.", "`app/auth/`, `keycloak/crce-realm.json`"),
-    ("Interfaz gráfica", "HTML, CSS y JavaScript sin framework, servidos por la misma API en `/app`; una vista por perfil.",
-     "`interfaz/`"),
-    ("Pruebas unitarias", "351 pruebas: dominio, autorización y API; las de API corren en memoria y contra Mongo simulado.",
-     "`tests/`"),
-    ("Dockerfile y Compose", "Una orden levanta API, MongoDB y Keycloak, con la carga inicial incluida.",
-     "`Dockerfile`, `docker-compose.yaml`"),
-    ("Colección Bruno", "41 pedidos con 49 verificaciones: casos válidos y rechazos 401, 403, 409 y 422.", "`bruno/`"),
-    ("Repositorio público", "Código, instrucciones de ejecución y esta documentación publicada en GitHub Pages.",
-     "`README.md`, `docs/`"),
-]
-
 # (PV, escenario, archivo de pruebas, otras formas de verlo)
 ESCENARIOS = [
     ("PV01", "Registro y consulta de avisos", "test_evaluacion_avisos, test_autorizacion", "Bruno · interfaz"),
@@ -80,7 +58,7 @@ ESCENARIOS = [
     ("PV16", "Cierre de emergencia", "test_emergencias", "Bruno · interfaz"),
     ("PV17", "Historial de operaciones", "test_emergencias", "Bruno · interfaz"),
     ("PV18", "Consistencia ante errores", "test_emergencias, test_api_misiones", "Bruno (409)"),
-    ("PV19", "Demostración integral", "—", "interfaz (grupo 10)"),
+    ("PV19", "Demostración integral", "—", "interfaz (grupo 11)"),
 ]
 
 USUARIOS = [
@@ -168,14 +146,6 @@ def slides_plataforma():
         + _arquitectura()
         + '<div class="callout">Las tres piezas del recuadro punteado corren en contenedores. Con <code>docker compose up -d --build</code> '
           'queda todo en marcha, con los usuarios y las unidades de demostración ya cargados.</div>')))
-
-    filas = "".join(f'<tr><td><b>{esc(e)}</b></td><td>{md(c)}</td><td class="sc-donde">{md(d)}</td><td class="sc-ok">✓</td></tr>'
-                    for e, c, d in EXIGENCIAS)
-    s.append(dict(eyebrow="sistema completo · entrega final", titulo="Lo que pide la entrega final y cómo se cumple", html=(
-        '<p class="lead corto">Los diez requisitos de la sección 12 del enunciado, con la decisión tomada y el lugar del '
-        'repositorio donde se puede verificar.</p>'
-        f'<table class="sc-tabla"><thead><tr><th>Requisito</th><th>Cómo se cumple</th><th>Dónde</th><th></th></tr></thead>'
-        f'<tbody>{filas}</tbody></table>')))
 
     pasos = "".join(f'<li><b>{n}</b><span>{md(t)}</span></li>' for n, t in [
         (1, "El usuario escribe usuario y clave en la interfaz; Keycloak los valida y devuelve un **token firmado** (JWT)."),
@@ -291,6 +261,36 @@ docker compose down""") +
         '<li>Se guarda la emergencia completa con sus misiones: una operación, un documento; no quedan cambios a medias (PV18).</li>'
         '</ul></div></div>')))
 
+    s.append(dict(eyebrow="sistema completo · /docs", titulo="La API se documenta sola: /docs", html=(
+        '<div class="sc-docs"><div class="sc-texto">'
+        '<p class="explain">FastAPI genera la especificación <b>OpenAPI</b> a partir de los routers y de los DTO de '
+        'Pydantic, y la muestra en <code>http://localhost:8000/docs</code>. No se escribe a mano: si cambia una ruta o un '
+        'esquema, la documentación cambia con el código.</p><ul>'
+        '<li>Las 36 rutas, agrupadas por recurso: avisos, emergencias y misiones, recursos y sistema.</li>'
+        '<li>El candado indica que la ruta pide el token de Keycloak.</li>'
+        '<li>Al pie, los esquemas de entrada y salida: los mismos DTO que valida la API (422 si no cumplen).</li></ul>'
+        '<div class="callout">Es el cierre del backend: el contrato completo de la API, en una página, generado desde el '
+        'código.</div></div>'
+        + foto("../docs/docs-rutas.webp", "Las rutas de /docs", "Las 36 rutas de `/docs`, agrupadas por recurso.")
+        + '</div>')))
+
+    probar = "".join(f'<li><b>{n}</b><span>{md(t)}</span></li>' for n, t in [
+        (1, "**Authorize**: se pega el token que emitió Keycloak (por ejemplo, el de `operador1`)."),
+        (2, "**Try it out** y **Execute** en `GET /emergencias`: 200 con las emergencias abiertas, por prioridad."),
+        (3, "El mismo token en `POST /avisos`: 403, porque registrar avisos es solo del reportante."),
+    ])
+    s.append(dict(eyebrow="sistema completo · /docs", titulo="Probar la API desde /docs", html=(
+        f'<div class="sc-docs2"><div class="sc-texto"><ol class="sc-pasos">{probar}</ol>'
+        + foto("../docs/docs-authorized.webp", "Token cargado en Authorize", "Token cargado: Swagger lo envía como `Bearer`.")
+        + '<p class="sc-pie">Cada ejecución muestra también el <code>curl</code> equivalente, útil para repetirlo desde la terminal.</p></div>'
+        + foto("../docs/docs-get-emergencias.webp", "GET /emergencias ejecutado", "`GET /emergencias` → 200.")
+        + foto("../docs/docs-post-avisos-403.webp", "POST /avisos rechazado", "`POST /avisos` con perfil operador → 403.")
+        + '</div>')))
+    return s
+
+
+def slide_pruebas():
+    """Pruebas y Bruno: abre el grupo «Los 19 escenarios»."""
     pruebas = [("test_api_misiones", 46), ("test_autorizacion", 44), ("test_emergencias", 37), ("test_recursos", 31),
                ("test_ejecucion", 29), ("test_diseno", 29), ("test_asignacion", 26), ("test_api_avisos", 26),
                ("test_evaluacion_avisos", 19), ("test_avisos", 18), ("test_persistencia", 16), ("test_avisos_robustez", 15),
@@ -302,15 +302,14 @@ docker compose down""") +
              ("03-misiones", "crear, 422, ambulancia para rescate (409), asignar, PV18, reasignar, ejecutar, cerrar, historial"),
              ("04-emergencias", "orden por prioridad y consultas")]
     filas_b = "".join(f'<li><code>{n}</code> {esc(d)}</li>' for n, d in bruno)
-    s.append(dict(eyebrow="sistema completo · verificación", titulo="Pruebas unitarias y colección Bruno", html=(
+    return dict(eyebrow="escenarios · cómo se verifican", titulo="Pruebas unitarias y colección Bruno", html=(
         '<div class="grid"><div class="card pruebas"><h3>351 pruebas · <code>uv run python -m pytest</code></h3>' + filas_p +
         '<p class="sc-pie">Las pruebas de API se ejecutan dos veces: con el repositorio en memoria y con Mongo '
         'simulado (<code>mongomock</code>). Así se comprueba que ambas implementaciones cumplen el mismo contrato.</p></div>'
         f'<div class="card"><h3>Bruno · 41 pedidos, 49 verificaciones</h3><ul class="sc-bruno">{filas_b}</ul>'
         + pre("cd bruno\nnpx @usebruno/cli run --env local") +
         '<div class="callout">Las pruebas verifican el dominio sin red; Bruno verifica el sistema levantado, con tokens '
-        'reales de Keycloak. La colección se puede repetir: crea sus propios datos en cada corrida.</div></div></div>')))
-    return s
+        'reales de Keycloak. La colección se puede repetir: crea sus propios datos en cada corrida.</div></div></div>'))
 
 
 def slide_escenarios():
@@ -490,6 +489,10 @@ CSS = r"""
 .sc-quien{display:inline-block;background:var(--gold);color:#0b1020;font-weight:700;font-size:12.5px;border-radius:99px;padding:3px 12px}
 .sc-pv{display:inline-block;color:var(--accent);border:1px solid #32665e;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;margin:8px 6px 0 0}
 .sc-est{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:.92em}
+.sc-docs{display:grid;grid-template-columns:minmax(260px,.7fr) 1.6fr;gap:clamp(14px,2vw,28px);align-items:start}
+.sc-docs2{display:grid;grid-template-columns:minmax(240px,.8fr) 1fr 1fr;gap:16px;align-items:start}
+.sc-docs2 .sc-foto img{max-height:62vh}
+@media (max-width:900px){.sc-docs,.sc-docs2{grid-template-columns:1fr}}
 .sc-evol td:first-child{color:var(--muted);width:24px}
 .sc-pie{font-size:13px;color:var(--muted);margin:10px 0 0;line-height:1.45}.sc-pie code{font-size:.95em}
 .sc-que{color:var(--soft)!important;margin-top:8px!important;font-size:13px!important;line-height:1.35}
@@ -501,7 +504,7 @@ CSS = r"""
 
 JS = r"""<script>
 /* ampliar capturas: clic o Enter abre; clic, Esc o cualquier tecla cierra. Se reajusta la diapositiva al cargar la imagen. */
-(()=>{
+document.addEventListener('DOMContentLoaded',()=>{
  const capa=document.createElement('div');capa.id='sc-zoom';capa.setAttribute('role','dialog');capa.setAttribute('aria-label','Imagen ampliada');
  const im=document.createElement('img');capa.append(im);document.body.append(capa);
  const abrir=img=>{im.src=img.src;im.alt=img.alt;capa.classList.add('on')};
@@ -513,5 +516,5 @@ JS = r"""<script>
   img.addEventListener('load',()=>{if(typeof ajustarSlide==='function'&&img.closest('.slide.active'))ajustarSlide()});
  });
  addEventListener('keydown',e=>{if(capa.classList.contains('on')){e.preventDefault();e.stopImmediatePropagation();cerrar()}},true);
-})();
+});
 </script>"""

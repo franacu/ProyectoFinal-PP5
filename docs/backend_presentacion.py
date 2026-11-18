@@ -265,10 +265,10 @@ def construir():
 
     # sistema completo: lo que rodea al dominio (grupo 9) y la interfaz en uso (grupo 10)
     for titulo, desc, generar in (
-            ("Plataforma", "Requisitos de la entrega final, Keycloak, Docker, configuración, API y pruebas.", sc.slides_plataforma),
-            ("La interfaz en uso", "El recorrido de PV19 con capturas reales, participante por participante.", sc.slides_interfaz),
-            ("Los 19 escenarios", "Cada PV con capturas de la interfaz y respuestas reales de la API.",
-             lambda: es.slides(sc.slide_escenarios()))):
+            ("Plataforma", "Arquitectura, Keycloak, Docker, configuración, API en capas y su documentación en /docs.", sc.slides_plataforma),
+            ("Los 19 escenarios", "Cómo se verifica y cada PV con capturas de la interfaz y respuestas reales de la API.",
+             lambda: es.slides(sc.slide_pruebas(), sc.slide_escenarios())),
+            ("La interfaz en uso", "El recorrido de PV19 con capturas reales, participante por participante.", sc.slides_interfaz)):
         g = len(grupos)
         idx = []
         for s in generar():
@@ -294,8 +294,8 @@ ICONOS = {   # íconos de línea, 24×24, dibujados con el color del texto
     7: '<path d="M7 18v-5a5 5 0 0 1 10 0v5"/><path d="M5 18h14v3H5z"/><path d="M12 3v2M4.5 6l1.4 1.4M19.5 6l-1.4 1.4"/>',
     9: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/>'
        '<path d="M7 7h.01M7 17h.01"/>',
-    11: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
-    10: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path d="m8 10 2 2 4-4"/>',
+    10: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
+    11: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path d="m8 10 2 2 4-4"/>',
 }
 # columnas del menú: los grupos en el orden en que se construyó el código, de izquierda a derecha
 COLUMNAS = [("Fundamentos", [8, 1, 2]), ("Avisos y recursos", [3, 4, 5]), ("Coordinación", [6, 7]), ("Sistema completo", [9, 10, 11])]
