@@ -1,5 +1,5 @@
 meta {
-  name: Emergencias abiertas por prioridad
+  name: Abiertas por prioridad
   type: http
   seq: 1
 }
@@ -7,7 +7,11 @@ meta {
 get {
   url: {{baseUrl}}/emergencias
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenOperador}}
 }
 
 tests {

@@ -33,8 +33,10 @@ class ServicioAvisos:
         self._avisos.guardar(aviso)
         return aviso
 
-    def listar(self, estado: EstadoAviso | None = None) -> list[Aviso]:
-        return self._avisos.listar(estado)
+    def listar(self, estado: EstadoAviso | None = None, reportante_id: str | None = None) -> list[Aviso]:
+        """`reportante_id`: si se indica, solo los avisos de ese reportante."""
+        avisos = self._avisos.listar(estado)
+        return avisos if reportante_id is None else [a for a in avisos if a.reportante_id == reportante_id]
 
     def obtener(self, aviso_id: str) -> Aviso:
         aviso = self._avisos.obtener(aviso_id)

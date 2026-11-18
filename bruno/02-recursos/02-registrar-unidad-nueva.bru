@@ -1,0 +1,61 @@
+meta {
+  name: Registrar unidad nueva
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/unidades
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenRecursos}}
+}
+
+body:json {
+  {
+    "id": "U-nueva-{{sfx}}",
+    "base_id": "B-centro",
+    "jefe": {
+      "id": "jefe-{{sfx}}",
+      "nombre": "Jefe",
+      "competencias": [
+        "rescate"
+      ]
+    },
+    "personal": [
+      {
+        "id": "chofer-{{sfx}}",
+        "nombre": "Chofer",
+        "competencias": [
+          "conduccion"
+        ]
+      },
+      {
+        "id": "rescatista-{{sfx}}",
+        "nombre": "Rescatista",
+        "competencias": [
+          "rescate"
+        ]
+      }
+    ],
+    "vehiculo": {
+      "id": "VR-{{sfx}}",
+      "categoria": "vehiculo_de_rescate"
+    },
+    "equipamiento": [
+      {
+        "id": "ER-{{sfx}}",
+        "categoria": "equipo_de_rescate"
+      }
+    ]
+  }
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

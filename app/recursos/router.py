@@ -1,4 +1,4 @@
-"""Endpoints de recursos (responsable de recursos; consultas también para operador y supervisor).
+"""Endpoints de recursos. Escriben: responsable de recursos. Consultan: operador, responsable y supervisor.
 
 | Método | Ruta                                              | Caso de uso                      |
 |--------|---------------------------------------------------|----------------------------------|
@@ -18,8 +18,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
+from app.auth.dependencies import requiere
+from app.auth.usuario import Perfil, Usuario
 from app.dependencies import servicio_de_recursos
-from app.internal.identidad import usuario_actual
 from app.recursos.schemas import (
     BaseDTO,
     CondicionOperativaCambio,
@@ -33,7 +34,8 @@ from app.recursos.schemas import (
 from app.recursos.service import ServicioRecursos
 
 Servicio = Annotated[ServicioRecursos, Depends(servicio_de_recursos)]
-Usuario = Annotated[str, Depends(usuario_actual)]
+Responsable = Annotated[Usuario, Depends(requiere(Perfil.RESPONSABLE_RECURSOS))]
+Consulta = Annotated[Usuario, Depends(requiere(Perfil.OPERADOR, Perfil.RESPONSABLE_RECURSOS, Perfil.SUPERVISOR))]
 _CREADO = status.HTTP_201_CREATED
 
 
@@ -57,56 +59,56 @@ class Router:
 
     # ── Consultas ──────────────────────────────────────────────
 
-    def bases(self, servicio: Servicio) -> list[BaseDTO]:
+    def bases(self, servicio: Servicio, usuario: Consulta) -> list[BaseDTO]:
         return [BaseDTO.desde_dominio(b) for b in servicio.bases()]
 
-    def unidades(self, servicio: Servicio) -> list[UnidadDetalle]:
+    def unidades(self, servicio: Servicio, usuario: Consulta) -> list[UnidadDetalle]:
         return [UnidadDetalle.desde_dominio(u) for u in servicio.unidades()]
 
-    def unidad(self, unidad_id: str, servicio: Servicio) -> UnidadDetalle:
+    def unidad(self, unidad_id: str, servicio: Servicio, usuario: Consulta) -> UnidadDetalle:
         return UnidadDetalle.desde_dominio(servicio.unidad(unidad_id))
 
     # ── Altas ──────────────────────────────────────────────────
 
-    def registrar_base(self, datos: BaseDTO, servicio: Servicio, usuario: Usuario) -> BaseDTO:
+    def registrar_base(self, datos: BaseDTO, servicio: Servicio, usuario: Responsable) -> BaseDTO:
         return BaseDTO.desde_dominio(servicio.registrar_base(datos.id, datos.nombre, datos.ubicacion.a_dominio()))
 
-    def registrar_unidad(self, datos: UnidadCrear, servicio: Servicio, usuario: Usuario) -> UnidadDetalle:
+    def registrar_unidad(self, datos: UnidadCrear, servicio: Servicio, usuario: Responsable) -> UnidadDetalle:
         unidad = servicio.registrar_unidad(
-            usuario, datos.id, datos.base_id, datos.jefe.a_dominio(), datos.vehiculo.a_dominio(),
+            usuario.id, datos.id, datos.base_id, datos.jefe.a_dominio(), datos.vehiculo.a_dominio(),
             tuple(p.a_dominio() for p in datos.personal), tuple(e.a_dominio() for e in datos.equipamiento))
         return UnidadDetalle.desde_dominio(unidad)
 
     # ── Composición y condición ────────────────────────────────
 
     def incorporar_personal(self, unidad_id: str, datos: PersonaDTO, servicio: Servicio,
-                            usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.incorporar_personal(usuario, unidad_id, datos.a_dominio()))
+                            usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.incorporar_personal(usuario.id, unidad_id, datos.a_dominio()))
 
     def retirar_personal(self, unidad_id: str, persona_id: str, servicio: Servicio,
-                         usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.retirar_personal(usuario, unidad_id, persona_id))
+                         usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.retirar_personal(usuario.id, unidad_id, persona_id))
 
     def cambiar_vehiculo(self, unidad_id: str, datos: VehiculoDTO, servicio: Servicio,
-                         usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.cambiar_vehiculo(usuario, unidad_id, datos.a_dominio()))
+                         usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.cambiar_vehiculo(usuario.id, unidad_id, datos.a_dominio()))
 
     def condicion_vehiculo(self, unidad_id: str, datos: CondicionOperativaCambio, servicio: Servicio,
-                           usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.cambiar_condicion_vehiculo(usuario, unidad_id, datos.condicion))
+                           usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.cambiar_condicion_vehiculo(usuario.id, unidad_id, datos.condicion))
 
     def incorporar_equipo(self, unidad_id: str, datos: EquipoDTO, servicio: Servicio,
-                          usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.incorporar_equipo(usuario, unidad_id, datos.a_dominio()))
+                          usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.incorporar_equipo(usuario.id, unidad_id, datos.a_dominio()))
 
-    def retirar_equipo(self, unidad_id: str, equipo_id: str, servicio: Servicio, usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.retirar_equipo(usuario, unidad_id, equipo_id))
+    def retirar_equipo(self, unidad_id: str, equipo_id: str, servicio: Servicio, usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.retirar_equipo(usuario.id, unidad_id, equipo_id))
 
     def condicion_equipo(self, unidad_id: str, equipo_id: str, datos: CondicionOperativaCambio,
-                         servicio: Servicio, usuario: Usuario) -> UnidadDetalle:
+                         servicio: Servicio, usuario: Responsable) -> UnidadDetalle:
         return UnidadDetalle.desde_dominio(
-            servicio.cambiar_condicion_equipo(usuario, unidad_id, equipo_id, datos.condicion))
+            servicio.cambiar_condicion_equipo(usuario.id, unidad_id, equipo_id, datos.condicion))
 
     def cambiar_condicion(self, unidad_id: str, datos: CondicionServicioCambio, servicio: Servicio,
-                          usuario: Usuario) -> UnidadDetalle:
-        return UnidadDetalle.desde_dominio(servicio.cambiar_condicion(usuario, unidad_id, datos.condicion))
+                          usuario: Responsable) -> UnidadDetalle:
+        return UnidadDetalle.desde_dominio(servicio.cambiar_condicion(usuario.id, unidad_id, datos.condicion))

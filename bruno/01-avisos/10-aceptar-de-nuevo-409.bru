@@ -1,0 +1,31 @@
+meta {
+  name: Aceptar de nuevo (409)
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/avisos/{{avisoId}}/aceptacion
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenOperador}}
+}
+
+body:json {
+  {
+    "tipo": "incendio",
+    "gravedad": "alta"
+  }
+}
+
+tests {
+  test("responde 409", function () {
+    expect(res.status).to.equal(409);
+  });
+  test("motivo: AvisoNoPendiente", function () {
+    expect(res.body.error).to.equal("AvisoNoPendiente");
+  });
+}

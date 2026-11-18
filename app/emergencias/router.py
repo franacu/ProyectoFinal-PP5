@@ -3,6 +3,7 @@
 | Método | Ruta                                                | Actor        |
 |--------|-----------------------------------------------------|--------------|
 | GET    | /emergencias                                        | operador, supervisor (PV03) |
+| GET    | /emergencias/todas                                  | operador, supervisor (abiertas y cerradas) |
 | GET    | /emergencias/{id}                                   | operador, supervisor |
 | GET    | /emergencias/{id}/historial                         | operador, supervisor |
 | POST   | /emergencias/{id}/misiones                          | operador     |
@@ -21,6 +22,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
+from app.auth.dependencies import requiere
+from app.auth.usuario import Perfil, Usuario
 from app.dependencies import servicio_de_emergencias
 from app.emergencias.schemas import (
     AsignacionCrear,
@@ -33,11 +36,13 @@ from app.emergencias.schemas import (
     RechazoCrear,
 )
 from app.emergencias.service import ServicioEmergencias
-from app.internal.identidad import usuario_actual
 from app.internal.schemas import RegistroDetalle
 
 Servicio = Annotated[ServicioEmergencias, Depends(servicio_de_emergencias)]
-Usuario = Annotated[str, Depends(usuario_actual)]
+Operador = Annotated[Usuario, Depends(requiere(Perfil.OPERADOR))]
+Jefe = Annotated[Usuario, Depends(requiere(Perfil.JEFE_UNIDAD))]
+Supervisor = Annotated[Usuario, Depends(requiere(Perfil.SUPERVISOR))]
+Consulta = Annotated[Usuario, Depends(requiere(Perfil.OPERADOR, Perfil.SUPERVISOR))]
 _MISION = "/{emergencia_id}/misiones/{mision_id}"
 
 
@@ -45,6 +50,7 @@ class Router:
     def __init__(self) -> None:
         r = self.router = APIRouter(prefix="/emergencias", tags=["emergencias y misiones"])
         r.add_api_route("", self.abiertas_por_prioridad, methods=["GET"])
+        r.add_api_route("/todas", self.todas, methods=["GET"])
         r.add_api_route("/{emergencia_id}", self.obtener, methods=["GET"])
         r.add_api_route("/{emergencia_id}/historial", self.historial, methods=["GET"])
         r.add_api_route("/{emergencia_id}/misiones", self.crear_mision, methods=["POST"],
@@ -64,55 +70,59 @@ class Router:
 
     # ── Consultas ──────────────────────────────────────────────
 
-    def abiertas_por_prioridad(self, servicio: Servicio) -> list[EmergenciaDetalle]:
+    def abiertas_por_prioridad(self, servicio: Servicio, usuario: Consulta) -> list[EmergenciaDetalle]:
         return [EmergenciaDetalle.desde_dominio(e) for e in servicio.abiertas_por_prioridad()]
 
-    def obtener(self, emergencia_id: str, servicio: Servicio) -> EmergenciaDetalle:
+    def todas(self, servicio: Servicio, usuario: Consulta) -> list[EmergenciaDetalle]:
+        return [EmergenciaDetalle.desde_dominio(e) for e in servicio.todas()]
+
+    def obtener(self, emergencia_id: str, servicio: Servicio, usuario: Consulta) -> EmergenciaDetalle:
         return EmergenciaDetalle.desde_dominio(servicio.obtener(emergencia_id))
 
-    def historial(self, emergencia_id: str, servicio: Servicio) -> list[RegistroDetalle]:
+    def historial(self, emergencia_id: str, servicio: Servicio, usuario: Consulta) -> list[RegistroDetalle]:
         return [RegistroDetalle.desde_dominio(r) for r in servicio.obtener(emergencia_id).registros]
 
-    def misiones_del_jefe(self, servicio: Servicio, usuario: Usuario) -> list[MisionDelJefe]:
-        return [MisionDelJefe.desde(e, m) for e, m in servicio.misiones_del_jefe(usuario)]
+    def misiones_del_jefe(self, servicio: Servicio, usuario: Jefe) -> list[MisionDelJefe]:
+        return [MisionDelJefe.desde(e, m) for e, m in servicio.misiones_del_jefe(usuario.id)]
 
     # ── Operador ───────────────────────────────────────────────
 
     def crear_mision(self, emergencia_id: str, datos: MisionCrear, servicio: Servicio,
-                     usuario: Usuario) -> MisionDetalle:
+                     usuario: Operador) -> MisionDetalle:
         return MisionDetalle.desde_dominio(
-            servicio.crear_mision(emergencia_id, usuario, datos.tipo, datos.objetivo, datos.cantidad_personas))
+            servicio.crear_mision(emergencia_id, usuario.id, datos.tipo, datos.objetivo, datos.cantidad_personas))
 
     def asignar(self, emergencia_id: str, mision_id: str, datos: AsignacionCrear, servicio: Servicio,
-                usuario: Usuario) -> MisionDetalle:
-        return MisionDetalle.desde_dominio(servicio.asignar(emergencia_id, mision_id, datos.unidad_id, usuario))
+                usuario: Operador) -> MisionDetalle:
+        return MisionDetalle.desde_dominio(servicio.asignar(emergencia_id, mision_id, datos.unidad_id, usuario.id))
 
     def reasignar(self, emergencia_id: str, mision_id: str, datos: AsignacionCrear, servicio: Servicio,
-                  usuario: Usuario) -> MisionDetalle:
-        return MisionDetalle.desde_dominio(servicio.reasignar(emergencia_id, mision_id, datos.unidad_id, usuario))
+                  usuario: Operador) -> MisionDetalle:
+        return MisionDetalle.desde_dominio(servicio.reasignar(emergencia_id, mision_id, datos.unidad_id, usuario.id))
 
-    def cancelar(self, emergencia_id: str, mision_id: str, servicio: Servicio, usuario: Usuario) -> MisionDetalle:
-        return MisionDetalle.desde_dominio(servicio.cancelar(emergencia_id, mision_id, usuario))
+    def cancelar(self, emergencia_id: str, mision_id: str, servicio: Servicio, usuario: Operador) -> MisionDetalle:
+        return MisionDetalle.desde_dominio(servicio.cancelar(emergencia_id, mision_id, usuario.id))
 
     # ── Jefe de unidad ─────────────────────────────────────────
 
     def rechazar(self, emergencia_id: str, mision_id: str, datos: RechazoCrear, servicio: Servicio,
-                 usuario: Usuario) -> MisionDetalle:
-        return MisionDetalle.desde_dominio(servicio.rechazar(emergencia_id, mision_id, usuario, datos.justificacion))
+                 usuario: Jefe) -> MisionDetalle:
+        return MisionDetalle.desde_dominio(servicio.rechazar(emergencia_id, mision_id, usuario.id, datos.justificacion))
 
-    def iniciar(self, emergencia_id: str, mision_id: str, servicio: Servicio, usuario: Usuario) -> MisionDetalle:
-        return MisionDetalle.desde_dominio(servicio.iniciar(emergencia_id, mision_id, usuario))
+    def iniciar(self, emergencia_id: str, mision_id: str, servicio: Servicio, usuario: Jefe) -> MisionDetalle:
+        return MisionDetalle.desde_dominio(servicio.iniciar(emergencia_id, mision_id, usuario.id))
 
     def registrar_novedad(self, emergencia_id: str, mision_id: str, datos: NovedadCrear, servicio: Servicio,
-                          usuario: Usuario) -> MisionDetalle:
-        return MisionDetalle.desde_dominio(servicio.registrar_novedad(emergencia_id, mision_id, usuario, datos.texto))
+                          usuario: Jefe) -> MisionDetalle:
+        return MisionDetalle.desde_dominio(
+            servicio.registrar_novedad(emergencia_id, mision_id, usuario.id, datos.texto))
 
     def finalizar(self, emergencia_id: str, mision_id: str, datos: FinalizacionCrear, servicio: Servicio,
-                  usuario: Usuario) -> MisionDetalle:
+                  usuario: Jefe) -> MisionDetalle:
         return MisionDetalle.desde_dominio(
-            servicio.finalizar(emergencia_id, mision_id, usuario, datos.resultado, datos.tareas))
+            servicio.finalizar(emergencia_id, mision_id, usuario.id, datos.resultado, datos.tareas))
 
     # ── Supervisor ─────────────────────────────────────────────
 
-    def cerrar(self, emergencia_id: str, servicio: Servicio, usuario: Usuario) -> EmergenciaDetalle:
-        return EmergenciaDetalle.desde_dominio(servicio.cerrar(emergencia_id, usuario))
+    def cerrar(self, emergencia_id: str, servicio: Servicio, usuario: Supervisor) -> EmergenciaDetalle:
+        return EmergenciaDetalle.desde_dominio(servicio.cerrar(emergencia_id, usuario.id))

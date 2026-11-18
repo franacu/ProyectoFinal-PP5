@@ -42,6 +42,13 @@ class ServicioEmergencias:
     def obtener(self, emergencia_id: str) -> Emergencia:
         return self._obtener(emergencia_id, self._flota.cargar())
 
+    def de_aviso(self, aviso_id: str) -> Emergencia:
+        """La emergencia que originó un aviso aceptado (404 si el aviso no fue aceptado)."""
+        for emergencia in self._emergencias.listar(self._flota.cargar()):
+            if emergencia.aviso_id == aviso_id:
+                return emergencia
+        raise EmergenciaNoEncontrada(f"El aviso {aviso_id} no originó una emergencia")
+
     def misiones_del_jefe(self, jefe_id: str) -> list[tuple[Emergencia, VistaMision]]:
         """Misiones asignadas o en ejecución de la unidad que dirige `jefe_id` (§2.3)."""
         flota = self._flota.cargar()

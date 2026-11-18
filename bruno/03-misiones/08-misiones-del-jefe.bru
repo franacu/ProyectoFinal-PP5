@@ -1,0 +1,21 @@
+meta {
+  name: Misiones del jefe
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/misiones/mias
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenDiego}}
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Agregar nota (reportante)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/avisos/{{avisoId}}/notas
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenHospital}}
+}
+
+body:json {
+  {
+    "texto": "Ahora se ven llamas en el techo"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

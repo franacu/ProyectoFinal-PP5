@@ -1,0 +1,27 @@
+meta {
+  name: Declarar en mantenimiento
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/unidades/U-nueva-{{sfx}}/condicion
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenRecursos}}
+}
+
+body:json {
+  {
+    "condicion": "en_mantenimiento"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

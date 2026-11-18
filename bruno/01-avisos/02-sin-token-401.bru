@@ -1,0 +1,29 @@
+meta {
+  name: Sin token (401)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/avisos
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "ubicacion": {
+      "direccion": "Av. San Martín 450",
+      "localidad": "Ushuaia"
+    },
+    "tipo": "incendio",
+    "gravedad_estimada": "alta",
+    "descripcion": "Humo saliendo de una vivienda con personas en el primer piso"
+  }
+}
+
+tests {
+  test("responde 401", function () {
+    expect(res.status).to.equal(401);
+  });
+}

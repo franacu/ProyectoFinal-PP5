@@ -11,8 +11,11 @@ from datetime import UTC, datetime, timedelta
 
 import mongomock
 import pytest
+from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
 
+from app.auth.dependencies import usuario_actual
+from app.auth.usuario import Perfil, Usuario
 from app.avisos.mongo_repository import RepositorioAvisosMongo
 from app.emergencias.mongo_repository import RepositorioEmergenciasMongo
 from app.main import Repositorios, crear_aplicacion
@@ -38,13 +41,45 @@ def repositorios_mongo(base) -> Repositorios:
 def cliente(request):
     repositorios = (Repositorios.en_memoria() if request.param == "memoria"
                     else repositorios_mongo(mongomock.MongoClient(tz_aware=True)["crce"]))
-    with TestClient(crear_aplicacion(repositorios, RelojDePrueba())) as cliente:
+    aplicacion = crear_aplicacion(repositorios, RelojDePrueba())
+    aplicacion.dependency_overrides[usuario_actual] = _usuario_de_prueba
+    with TestClient(aplicacion) as cliente:
         yield cliente
 
 
-def como(usuario: str) -> dict[str, str]:
-    """Encabezado de identidad provisorio (se reemplaza por el token en la etapa de autenticación)."""
-    return {"X-Usuario": usuario}
+def _usuario_de_prueba(request: Request) -> Usuario:
+    """Reemplaza al token de Keycloak en las pruebas: el usuario y su perfil viajan en encabezados.
+
+    Solo existe en las pruebas. La verificación real del token se prueba en test_autorizacion.py.
+    """
+    if "X-Usuario" not in request.headers:
+        raise HTTPException(401, "Falta el token")
+    return Usuario(request.headers["X-Usuario"], Perfil(request.headers["X-Perfil"]))
+
+
+def como(usuario: str, perfil: Perfil) -> dict[str, str]:
+    """Encabezados de identidad de prueba (en la aplicación real, el usuario sale del token)."""
+    return {"X-Usuario": usuario, "X-Perfil": perfil.value}
+
+
+def reportante(usuario: str = "hospital") -> dict[str, str]:
+    return como(usuario, Perfil.REPORTANTE)
+
+
+def operador(usuario: str = "operador1") -> dict[str, str]:
+    return como(usuario, Perfil.OPERADOR)
+
+
+def jefe(usuario: str) -> dict[str, str]:
+    return como(usuario, Perfil.JEFE_UNIDAD)
+
+
+def responsable(usuario: str = "recursos1") -> dict[str, str]:
+    return como(usuario, Perfil.RESPONSABLE_RECURSOS)
+
+
+def supervisor(usuario: str = "supervisor1") -> dict[str, str]:
+    return como(usuario, Perfil.SUPERVISOR)
 
 
 AVISO_DE_INCENDIO = {

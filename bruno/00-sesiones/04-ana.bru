@@ -1,0 +1,28 @@
+meta {
+  name: Iniciar sesión: ana (jefe de U-rescate-1)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{keycloakUrl}}/realms/crce/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  client_id: crce-api
+  grant_type: password
+  username: ana
+  password: crce2026
+}
+
+vars:post-response {
+  tokenAna: res.body.access_token
+}
+
+tests {
+  test("Keycloak entrega el token", function () {
+    expect(res.status).to.equal(200);
+  });
+}

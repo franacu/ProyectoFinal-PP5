@@ -1,0 +1,242 @@
+{
+  "realm": "crce",
+  "displayName": "CRCE",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "accessTokenLifespan": 3600,
+  "roles": {
+    "realm": [
+      {
+        "name": "reportante",
+        "description": "Reportante institucional: registra avisos y consulta los propios"
+      },
+      {
+        "name": "operador",
+        "description": "Operador de coordinación: evalúa avisos y gestiona misiones"
+      },
+      {
+        "name": "jefe_unidad",
+        "description": "Jefe de unidad: ejecuta las misiones de su unidad"
+      },
+      {
+        "name": "responsable_recursos",
+        "description": "Responsable de recursos: administra bases y unidades"
+      },
+      {
+        "name": "supervisor",
+        "description": "Supervisor regional: consulta todo y cierra emergencias"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "crce-api",
+      "name": "CRCE API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:8000/*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "hospital",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "hospital@crce.test",
+      "firstName": "Hospital",
+      "lastName": "Regional",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "reportante"
+      ]
+    },
+    {
+      "username": "municipio",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "municipio@crce.test",
+      "firstName": "Municipalidad",
+      "lastName": "de Ushuaia",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "reportante"
+      ]
+    },
+    {
+      "username": "operador1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "operador1@crce.test",
+      "firstName": "Olga",
+      "lastName": "Operadora",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "operador"
+      ]
+    },
+    {
+      "username": "ana",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "ana@crce.test",
+      "firstName": "Ana",
+      "lastName": "Rescate",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "jefe_unidad"
+      ]
+    },
+    {
+      "username": "diego",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "diego@crce.test",
+      "firstName": "Diego",
+      "lastName": "Rescate",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "jefe_unidad"
+      ]
+    },
+    {
+      "username": "gabi",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "gabi@crce.test",
+      "firstName": "Gabriela",
+      "lastName": "Sanitaria",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "jefe_unidad"
+      ]
+    },
+    {
+      "username": "ines",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "ines@crce.test",
+      "firstName": "Inés",
+      "lastName": "Transporte",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "jefe_unidad"
+      ]
+    },
+    {
+      "username": "recursos1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "recursos1@crce.test",
+      "firstName": "Ramiro",
+      "lastName": "Recursos",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "responsable_recursos"
+      ]
+    },
+    {
+      "username": "supervisor1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "supervisor1@crce.test",
+      "firstName": "Sofía",
+      "lastName": "Supervisora",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "crce2026",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "supervisor"
+      ]
+    }
+  ]
+}

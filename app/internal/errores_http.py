@@ -16,6 +16,7 @@ el primer código definido, de lo más específico a lo más general:
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from app.auth.usuario import AccesoDenegado
 from app.internal.esquema import EsquemaIncompatible
 from dominio import errores
 
@@ -55,6 +56,13 @@ def _esquema_incompatible(_request: Request, error: EsquemaIncompatible) -> JSON
                         content={"detail": str(error), "error": "EsquemaIncompatible"})
 
 
+def _acceso_denegado(_request: Request, error: AccesoDenegado) -> JSONResponse:
+    """Privada: el recurso existe pero no le corresponde al usuario."""
+    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN,
+                        content={"detail": str(error), "error": "AccesoDenegado"})
+
+
 def registrar_manejadores(aplicacion: FastAPI) -> None:
     aplicacion.add_exception_handler(errores.ErrorDeDominio, _error_de_dominio)
+    aplicacion.add_exception_handler(AccesoDenegado, _acceso_denegado)
     aplicacion.add_exception_handler(EsquemaIncompatible, _esquema_incompatible)

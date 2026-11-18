@@ -1,0 +1,27 @@
+meta {
+  name: Registrar novedad
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/novedades
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenDiego}}
+}
+
+body:json {
+  {
+    "texto": "Primera persona rescatada"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

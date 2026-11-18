@@ -1,0 +1,33 @@
+meta {
+  name: PV12 el operador no registra avisos (403)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/avisos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenOperador}}
+}
+
+body:json {
+  {
+    "ubicacion": {
+      "direccion": "Av. San Martín 450",
+      "localidad": "Ushuaia"
+    },
+    "tipo": "incendio",
+    "gravedad_estimada": "alta",
+    "descripcion": "Humo saliendo de una vivienda con personas en el primer piso"
+  }
+}
+
+tests {
+  test("responde 403", function () {
+    expect(res.status).to.equal(403);
+  });
+}

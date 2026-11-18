@@ -1,0 +1,21 @@
+meta {
+  name: El reportante ve su emergencia (resumen)
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/avisos/{{avisoId}}/emergencia
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenHospital}}
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

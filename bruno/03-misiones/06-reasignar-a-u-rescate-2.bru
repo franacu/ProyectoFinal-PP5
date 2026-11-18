@@ -1,0 +1,27 @@
+meta {
+  name: Reasignar a U-rescate-2
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/asignacion
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenOperador}}
+}
+
+body:json {
+  {
+    "unidad_id": "U-rescate-2"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

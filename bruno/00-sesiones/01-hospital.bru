@@ -1,0 +1,28 @@
+meta {
+  name: Iniciar sesión: hospital (reportante)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{keycloakUrl}}/realms/crce/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  client_id: crce-api
+  grant_type: password
+  username: hospital
+  password: crce2026
+}
+
+vars:post-response {
+  tokenHospital: res.body.access_token
+}
+
+tests {
+  test("Keycloak entrega el token", function () {
+    expect(res.status).to.equal(200);
+  });
+}

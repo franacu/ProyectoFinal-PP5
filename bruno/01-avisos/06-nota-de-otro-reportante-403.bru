@@ -1,0 +1,30 @@
+meta {
+  name: Nota de otro reportante (403)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/avisos/{{avisoId}}/notas
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenMunicipio}}
+}
+
+body:json {
+  {
+    "texto": "No es mi aviso"
+  }
+}
+
+tests {
+  test("responde 403", function () {
+    expect(res.status).to.equal(403);
+  });
+  test("motivo: NotaDeOtroAutor", function () {
+    expect(res.body.error).to.equal("NotaDeOtroAutor");
+  });
+}

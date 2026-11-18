@@ -110,3 +110,18 @@ class EmergenciaDetalle(BaseModel):
             misiones=[MisionDetalle.desde_dominio(m) for m in emergencia.misiones],
             registros=[RegistroDetalle.desde_dominio(r) for r in emergencia.registros],
         )
+
+
+class EmergenciaResumen(BaseModel):
+    """Lo que ve el reportante de la emergencia originada por su aviso (§2.1)."""
+
+    id: str
+    tipo: TipoSituacion
+    gravedad: GravedadDTO
+    ubicacion: UbicacionDTO
+    estado: EstadoEmergencia
+
+    @classmethod
+    def desde_dominio(cls, emergencia: Emergencia) -> "EmergenciaResumen":
+        return cls(id=emergencia.id, tipo=emergencia.tipo, gravedad=GravedadDTO.desde_dominio(emergencia.gravedad),
+                   ubicacion=UbicacionDTO.desde_dominio(emergencia.ubicacion), estado=emergencia.estado)

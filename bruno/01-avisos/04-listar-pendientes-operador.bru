@@ -1,0 +1,21 @@
+meta {
+  name: Listar pendientes (operador)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/avisos?estado=pendiente
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenOperador}}
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

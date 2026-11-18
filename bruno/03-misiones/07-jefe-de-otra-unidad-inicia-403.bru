@@ -7,11 +7,11 @@ meta {
 post {
   url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/inicio
   body: none
-  auth: none
+  auth: bearer
 }
 
-headers {
-  X-Usuario: ana-{{sfx}}
+auth:bearer {
+  token: {{tokenAna}}
 }
 
 tests {

@@ -30,4 +30,5 @@ COPY --from=build --chown=appuser:appgroup /app .
 
 USER appuser
 
-ENTRYPOINT ["fastapi", "run", "main.py", "--host", "0.0.0.0", "--port", "8000"]
+# Al arrancar: carga inicial de recursos (no repite lo que ya existe) y después la API.
+CMD ["sh", "-c", "python -m app.semilla && fastapi run main.py --host 0.0.0.0 --port 8000"]

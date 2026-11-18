@@ -29,7 +29,7 @@ git clone https://github.com/franacu/ProyectoFinal-PP5.git
 cd ProyectoFinal-PP5
 ```
 
-**3. Instalar y comprobar que todo funciona** (debe terminar con `305 passed`)
+**3. Instalar y comprobar que todo funciona** (debe terminar con `349 passed`)
 
 ```bash
 uv sync
@@ -40,19 +40,54 @@ Los tests no necesitan MongoDB. Cada prueba de la API corre dos veces: con repos
 los repositorios de MongoDB sobre `mongomock` (una base Mongo simulada), de modo que también se prueba
 que cada objeto se guarde y se restaure sin pérdidas.
 
-**3b. Levantar la API REST con MongoDB**
+**3b. Levantar la API REST con MongoDB y Keycloak**
+
+Todo en contenedores (MongoDB, Keycloak y la API; la API hace la carga inicial al arrancar):
 
 ```bash
-docker compose up -d db      # solo la base (Mongo 7) en localhost:27017
-uv run fastapi dev           # API en http://localhost:8000 · documentación en http://localhost:8000/docs
+docker compose up -d --build
 ```
+
+Para desarrollar con recarga automática, solo la base y Keycloak en contenedores:
+
+```bash
+docker compose up -d db keycloak
+uv run python -m app.semilla
+uv run fastapi dev
+```
+
+La API queda en http://localhost:8000 (documentación en `/docs`) y Keycloak en http://localhost:8080.
+Keycloak tarda unos 30 segundos en arrancar; hasta entonces las operaciones responden 503.
+
+**Usuarios de demostración** (carga inicial reproducible, §9). Contraseña de todos: `crce2026`.
+
+| Usuario | Perfil | Vínculo |
+|---|---|---|
+| `hospital`, `municipio` | reportante | sus propios avisos |
+| `operador1` | operador | — |
+| `ana`, `diego`, `gabi`, `ines` | jefe de unidad | U-rescate-1, U-rescate-2, U-ambulancia-1, U-transporte-1 |
+| `recursos1` | responsable de recursos | — |
+| `supervisor1` | supervisor | — |
+
+Las cuentas y perfiles están en `keycloak/crce-realm.json` (se importan solos). Las bases y unidades
+las carga `app/semilla.py`; el jefe de cada unidad es la persona cuyo id coincide con su usuario.
+
+Pedir un token y usarlo:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/realms/crce/protocol/openid-connect/token \
+  -d client_id=crce-api -d grant_type=password -d username=operador1 -d password=crce2026 \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/emergencias
+```
+
+En `/docs`, el botón **Authorize** acepta ese token.
 
 O todo en contenedores: `docker compose up -d --build`. Para probar los endpoints, abrir la carpeta
 `bruno/` con [Bruno](https://www.usebruno.com/) y elegir el entorno `local`
-(o por consola: `cd bruno && npx @usebruno/cli run --env local`). La colección recorre avisos, recursos,
-misiones y cierre, con los casos negativos (403, 409, 422) y PV18; puede ejecutarse varias veces seguidas.
-
-Mientras no esté la autenticación, el usuario se indica con el encabezado `X-Usuario`.
+(o por consola: `cd bruno && npx @usebruno/cli run --env local`). La colección primero inicia sesión en
+Keycloak con cada perfil y después recorre avisos, recursos, misiones y cierre, con los casos negativos
+(401, 403, 409, 422), PV01, PV12 y PV18. Necesita la carga inicial y puede ejecutarse varias veces seguidas.
 
 **4. Generar la pantalla de presentación y diagramas**
 
@@ -124,6 +159,7 @@ tests/
   test_diseno.py                            # el dominio no pregunta por clase, solo stdlib, sin hora del sistema
   test_api_avisos.py, test_api_emergencias.py  # contrato HTTP y códigos de error
   test_api_misiones.py                      # recursos, misiones y cierre por HTTP (PV04–PV18)
+  test_autorizacion.py                      # perfiles (PV12), avisos propios (PV01), token, carga inicial
   test_persistencia.py                      # esquemas versionados y repositorios Mongo
   escenarios.py                             # armado de datos de ejemplo
 PDFs_documentacion/        # enunciado, Avance 1 (avance-1.md) y primera entrega (PDF)
@@ -133,7 +169,10 @@ app/                       # capa de aplicación (FastAPI + MongoDB); el dominio
   avisos/                  # router → service → repository; esquema_mongo (documento ⇄ Aviso, versionado)
   emergencias/             # emergencias y misiones; esquema v2 (incluye misiones, migra la v1)
   recursos/                # bases y unidades: composición y condición; fabricas (texto ⇄ clase)
-  internal/                # conexión Mongo, reloj, identidad, esquema común, errores → HTTP
+  auth/                    # Keycloak: verificación del token, Usuario y perfiles, requiere(...)
+  semilla.py               # carga inicial reproducible de bases y unidades
+  internal/                # conexión Mongo, reloj, esquema común, errores → HTTP
+keycloak/crce-realm.json   # realm con los cinco perfiles y los usuarios de demostración
 bruno/                     # colección de pedidos HTTP con sus verificaciones
 docs/
   crce.py                  # genera crce.html: barra lateral con presentación y diagramas

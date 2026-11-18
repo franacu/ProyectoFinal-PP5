@@ -1,0 +1,37 @@
+meta {
+  name: Registrar aviso (hospital)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/avisos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenHospital}}
+}
+
+body:json {
+  {
+    "ubicacion": {
+      "direccion": "Av. San Martín 450",
+      "localidad": "Ushuaia"
+    },
+    "tipo": "incendio",
+    "gravedad_estimada": "alta",
+    "descripcion": "Humo saliendo de una vivienda con personas en el primer piso"
+  }
+}
+
+vars:post-response {
+  avisoId: res.body.id
+}
+
+tests {
+  test("responde 201", function () {
+    expect(res.status).to.equal(201);
+  });
+}

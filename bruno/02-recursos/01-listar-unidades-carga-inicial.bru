@@ -1,0 +1,25 @@
+meta {
+  name: Listar unidades (carga inicial)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/unidades
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{tokenRecursos}}
+}
+
+script:pre-request {
+  bru.setVar("sfx", String(Date.now()).slice(-6));
+}
+
+tests {
+  test("responde 200", function () {
+    expect(res.status).to.equal(200);
+  });
+}

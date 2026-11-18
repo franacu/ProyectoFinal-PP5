@@ -7,16 +7,16 @@ meta {
 post {
   url: {{baseUrl}}/emergencias/{{emergenciaId}}/misiones/{{misionId}}/asignacion
   body: json
-  auth: none
+  auth: bearer
 }
 
-headers {
-  X-Usuario: operador1
+auth:bearer {
+  token: {{tokenOperador}}
 }
 
 body:json {
   {
-    "unidad_id": "U-A-{{sfx}}"
+    "unidad_id": "U-ambulancia-1"
   }
 }
 

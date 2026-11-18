@@ -6,9 +6,9 @@ punta a punta: código HTTP, motivo del rechazo y que nada quede modificado a me
 
 import pytest
 
-from tests.conftest import AVISO_DE_INCENDIO, como
+from tests.conftest import AVISO_DE_INCENDIO, jefe, operador, reportante, responsable, supervisor
 
-RESPONSABLE, OPERADOR, SUPERVISOR = como("resp"), como("op"), como("sup")
+RESPONSABLE, OPERADOR, SUPERVISOR = responsable(), operador(), supervisor()
 
 
 def persona(pid, *competencias):
@@ -45,7 +45,7 @@ def escenario(cliente):
 
 
 def nueva_emergencia(cliente, tipo):
-    aviso = cliente.post("/avisos", json=AVISO_DE_INCENDIO | {"tipo": tipo}, headers=como("rep")).json()
+    aviso = cliente.post("/avisos", json=AVISO_DE_INCENDIO | {"tipo": tipo}, headers=reportante()).json()
     r = cliente.post(f"/avisos/{aviso['id']}/aceptacion", json={"tipo": tipo, "gravedad": "alta"}, headers=OPERADOR)
     return r.json()["id"]
 
@@ -63,15 +63,15 @@ def asignar(cliente, eid, mid, unidad, metodo="post"):
 
 
 def mision(cliente, eid, mid):
-    return next(m for m in cliente.get(f"/emergencias/{eid}").json()["misiones"] if m["id"] == mid)
+    return next(m for m in cliente.get(f"/emergencias/{eid}", headers=OPERADOR).json()["misiones"] if m["id"] == mid)
 
 
 def unidad(cliente, uid):
-    return cliente.get(f"/unidades/{uid}").json()
+    return cliente.get(f"/unidades/{uid}", headers=RESPONSABLE).json()
 
 
 def operaciones(cliente, eid):
-    return [r["operacion"] for r in cliente.get(f"/emergencias/{eid}/historial").json()]
+    return [r["operacion"] for r in cliente.get(f"/emergencias/{eid}/historial", headers=OPERADOR).json()]
 
 
 # ── Recursos ──────────────────────────────────────────────────
@@ -81,7 +81,7 @@ def test_las_unidades_registradas_quedan_habilitadas_y_libres(cliente, escenario
 
     assert (u["condicion"], u["mision_comprometida_id"], u["jefe_id"]) == ("habilitada", None, "ana")
     assert {p["id"] for p in u["personal"]} == {"ana", "bruno", "carla"}
-    assert len(cliente.get("/unidades").json()) == 4
+    assert len(cliente.get("/unidades", headers=RESPONSABLE).json()) == 4
 
 
 def test_una_persona_no_integra_dos_unidades_409(cliente, escenario):
@@ -92,7 +92,7 @@ def test_una_persona_no_integra_dos_unidades_409(cliente, escenario):
 
 
 def test_unidad_inexistente_404(cliente, escenario):
-    assert cliente.get("/unidades/no-existe").status_code == 404
+    assert cliente.get("/unidades/no-existe", headers=RESPONSABLE).status_code == 404
 
 
 # ── Creación de misiones (PV05) ───────────────────────────────
@@ -201,14 +201,14 @@ def test_reasignar_registra_unidad_anterior_y_nueva_y_libera_la_anterior(cliente
     assert r.json()["unidad_id"] == "U-rescate-2"
     assert unidad(cliente, "U-rescate")["mision_comprometida_id"] is None
     assert unidad(cliente, "U-rescate-2")["mision_comprometida_id"] == mid
-    registro = cliente.get(f"/emergencias/{escenario}/historial").json()[-1]
+    registro = cliente.get(f"/emergencias/{escenario}/historial", headers=OPERADOR).json()[-1]
     assert registro["detalle"] == {"unidad_anterior": "U-rescate", "unidad_nueva": "U-rescate-2"}
 
 
 def test_pv18_reasignacion_invalida_conserva_todo(cliente, escenario):
     mid = crear_mision(cliente, escenario)
     asignar(cliente, escenario, mid, "U-rescate")
-    historial_antes = cliente.get(f"/emergencias/{escenario}/historial").json()
+    historial_antes = cliente.get(f"/emergencias/{escenario}/historial", headers=OPERADOR).json()
 
     r = asignar(cliente, escenario, mid, "U-ambulancia", metodo="put")
 
@@ -216,7 +216,7 @@ def test_pv18_reasignacion_invalida_conserva_todo(cliente, escenario):
     assert mision(cliente, escenario, mid)["unidad_id"] == "U-rescate"
     assert unidad(cliente, "U-rescate")["mision_comprometida_id"] == mid
     assert unidad(cliente, "U-ambulancia")["mision_comprometida_id"] is None
-    assert cliente.get(f"/emergencias/{escenario}/historial").json() == historial_antes
+    assert cliente.get(f"/emergencias/{escenario}/historial", headers=OPERADOR).json() == historial_antes
 
 
 # ── Jefe de unidad (§2.3) ─────────────────────────────────────
@@ -225,8 +225,8 @@ def test_el_jefe_ve_las_misiones_de_su_unidad_y_no_las_ajenas(cliente, escenario
     mid = crear_mision(cliente, escenario)
     asignar(cliente, escenario, mid, "U-rescate")
 
-    propias = cliente.get("/misiones/mias", headers=como("ana")).json()
-    ajenas = cliente.get("/misiones/mias", headers=como("diego")).json()
+    propias = cliente.get("/misiones/mias", headers=jefe("ana")).json()
+    ajenas = cliente.get("/misiones/mias", headers=jefe("diego")).json()
 
     assert [m["id"] for m in propias] == [mid]
     assert propias[0]["ubicacion"]["localidad"] == "Ushuaia"
@@ -237,7 +237,7 @@ def test_un_jefe_no_puede_iniciar_la_mision_de_otra_unidad_403(cliente, escenari
     mid = crear_mision(cliente, escenario)
     asignar(cliente, escenario, mid, "U-rescate")
 
-    r = cliente.post(f"/emergencias/{escenario}/misiones/{mid}/inicio", headers=como("diego"))
+    r = cliente.post(f"/emergencias/{escenario}/misiones/{mid}/inicio", headers=jefe("diego"))
 
     assert (r.status_code, r.json()["error"]) == (403, "NoEsJefeDeLaUnidad")
     assert mision(cliente, escenario, mid)["estado"] == "asignada"
@@ -248,7 +248,7 @@ def test_rechazar_vuelve_a_pendiente_y_libera_la_unidad(cliente, escenario):
     asignar(cliente, escenario, mid, "U-rescate")
 
     r = cliente.post(f"/emergencias/{escenario}/misiones/{mid}/rechazo", json={"justificacion": "Desperfecto"},
-                     headers=como("ana"))
+                     headers=jefe("ana"))
 
     assert (r.json()["estado"], r.json()["unidad_id"]) == ("pendiente", None)
     assert unidad(cliente, "U-rescate")["mision_comprometida_id"] is None
@@ -257,7 +257,7 @@ def test_rechazar_vuelve_a_pendiente_y_libera_la_unidad(cliente, escenario):
 def test_una_mision_iniciada_no_se_cancela_ni_se_reasigna_409(cliente, escenario):
     mid = crear_mision(cliente, escenario)
     asignar(cliente, escenario, mid, "U-rescate")
-    cliente.post(f"/emergencias/{escenario}/misiones/{mid}/inicio", headers=como("ana"))
+    cliente.post(f"/emergencias/{escenario}/misiones/{mid}/inicio", headers=jefe("ana"))
 
     cancelar = cliente.post(f"/emergencias/{escenario}/misiones/{mid}/cancelacion", headers=OPERADOR)
     reasignar = asignar(cliente, escenario, mid, "U-rescate-2", metodo="put")
@@ -273,10 +273,10 @@ def test_recorrido_completo_hasta_el_cierre(cliente, escenario):
     ruta = f"/emergencias/{escenario}/misiones/{mid}"
 
     assert cliente.post(f"/emergencias/{escenario}/cierre", headers=SUPERVISOR).json()["error"] == "MisionSinConcluir"
-    cliente.post(f"{ruta}/inicio", headers=como("ana"))
-    cliente.post(f"{ruta}/novedades", json={"texto": "Primera persona rescatada"}, headers=como("ana"))
+    cliente.post(f"{ruta}/inicio", headers=jefe("ana"))
+    cliente.post(f"{ruta}/novedades", json={"texto": "Primera persona rescatada"}, headers=jefe("ana"))
     fin = cliente.post(f"{ruta}/finalizacion", json={"resultado": "satisfactorio", "tareas": "Rescate de dos personas"},
-                       headers=como("ana"))
+                       headers=jefe("ana"))
     cierre = cliente.post(f"/emergencias/{escenario}/cierre", headers=SUPERVISOR)
 
     assert fin.json()["estado"] == "finalizada"
@@ -285,7 +285,7 @@ def test_recorrido_completo_hasta_el_cierre(cliente, escenario):
     assert operaciones(cliente, escenario) == [
         "emergencia_creada", "mision_creada", "mision_asignada", "mision_iniciada", "mision_novedad",
         "mision_finalizada", "emergencia_cerrada"]
-    assert escenario not in [e["id"] for e in cliente.get("/emergencias").json()]
+    assert escenario not in [e["id"] for e in cliente.get("/emergencias", headers=SUPERVISOR).json()]
 
 
 def test_no_se_cierra_sin_una_mision_satisfactoria_409(cliente, escenario):
